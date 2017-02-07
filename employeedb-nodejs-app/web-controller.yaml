@@ -14,7 +14,7 @@ spec:
         name: web
     spec:
       containers:
-      - image: gcr.io/kube-ceph-cluster/employeedb-nodejs-app:latest
+      - image: gcr.io/kube-cluster/employeedb-nodejs-app:latest
         name: web
         ports:
         - containerPort: 3000

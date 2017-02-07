@@ -14,7 +14,7 @@ spec:
         name: web
     spec:
       containers:
-      - image: gcr.io/kube-ceph-cluster/pacman-nginx-app:latest
+      - image: gcr.io/kube-cluster/pacman-nginx-app:latest
         name: web
         ports:
         - containerPort: 80
