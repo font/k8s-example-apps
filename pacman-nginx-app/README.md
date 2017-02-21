@@ -122,7 +122,7 @@ Now create the  MongoDB replication controller that will use the `gcePersistentD
 the `mongo-disk` we just created:
 
 ```
-kubectl create -f mongo-controller.yaml
+kubectl create -f controllers/mongo-controller.yaml
 ```
 
 #### Create the MongoDB service
@@ -130,7 +130,7 @@ kubectl create -f mongo-controller.yaml
 This component creates a mongo DNS entry, so this is why we use `mongo` as the host we connect to in our application instead of `localhost`.
 
 ```
-kubectl create -f mongo-service.yaml
+kubectl create -f services/mongo-service.yaml
 ```
 
 Verify the container has been created and is in the running state:
@@ -144,8 +144,8 @@ kubectl get pods -o wide --watch
 We'll need to create the web server replication controller, this time with 2 replicas, and the service to access the application on port 80.
 
 ```
-kubectl create -f web-controller.yaml
-kubectl create -f web-service.yaml
+kubectl create -f controllers/web-controller.yaml
+kubectl create -f services/web-service.yaml
 ```
 
 Wait until their status is running:
