@@ -1,0 +1,5 @@
+FROM mongo
+
+MAINTAINER Ivan Font <ifont@redhat.com>
+
+CMD ["mongod", "--replSet", "rs0"]

@@ -5,4 +5,3 @@ metadata:
 provisioner: kubernetes.io/gce-pd
 parameters:
   type: pd-standard
-  zone: us-west1-b
