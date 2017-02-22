@@ -2,18 +2,18 @@ apiVersion: extensions/v1beta1
 kind: ReplicaSet
 metadata:
   labels:
-    name: web
-  name: web
+    name: pacman
+  name: pacman
 spec:
   replicas: 3
   template:
     metadata:
       labels:
-        name: web
+        name: pacman
     spec:
       containers:
       - image: gcr.io/ifontlabs/pacman-nginx-app:latest
-        name: web
+        name: pacman
         ports:
         - containerPort: 80
           name: http-server
