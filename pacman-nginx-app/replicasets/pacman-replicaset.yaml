@@ -14,6 +14,7 @@ spec:
       containers:
       - image: gcr.io/ifontlabs/pacman-nginx-app:latest
         name: pacman
+        imagePullPolicy: Always
         ports:
         - containerPort: 80
           name: http-server

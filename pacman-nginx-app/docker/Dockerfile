@@ -5,7 +5,7 @@ MAINTAINER Ivan Font <ifont@redhat.com>
 # 1. Update and install packages
 # This should automatically add the mongodb.so extension to .ini files
 RUN apt-get -y update && \
-    apt-get -y install nginx php-fpm php-mongodb composer
+    apt-get -y install nginx php-fpm php-mongodb composer curl
 
 # 2. Run composer require for mongodb in the directory right above nginx root directory
 WORKDIR /var/www

@@ -7,7 +7,7 @@ RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14
 RUN echo "deb [ arch=amd64,arm64 ] http://repo.mongodb.org/apt/ubuntu xenial/mongodb-org/3.4 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-3.4.list
 # This should automatically add the mongodb.so extension to .ini files
 RUN apt-get -y update && \
-    apt-get -y install nginx php-fpm php-mongodb composer mongodb-org
+    apt-get -y install nginx php-fpm php-mongodb composer mongodb-org curl
 
 # 2. Run composer require for mongodb in the directory right above nginx root directory
 WORKDIR /var/www
@@ -47,4 +47,4 @@ EXPOSE 80
 EXPOSE 27017
 
 # 7. Run nginx and php-fpm along with some forever command e.g. while loop
-CMD service nginx start && service php7.0-fpm start && /usr/bin/mongod
+CMD service nginx start && service php7.0-fpm start && /usr/bin/mongod --replSet rs0
