@@ -18,7 +18,7 @@ Instead of walking you through each of the steps to create a federated Kubernete
   Federated Kubernetes tutorial. It uses Kubernetes version 1.5.2 and you only need about 3 clusters e.g. west, central, and
   east so you can ignore any of the other regions. Also, it includes steps on adding the federation config map for kube-dns to
   consume as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
-- Just follow the steps to create 3 GKE Kubernetes clusters in 3 regions e.g. west, central, and east using either guides
+- Follow the steps to create 3 GKE Kubernetes clusters in 3 regions e.g. west, central, and east using the guide
   from above. Then use [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) to initialize and join your
   clusters together. While this may be the easiest way, I ran into some issues at the time of this writing where the
   DNS entries were not being created in the Google Cloud DNS.
@@ -118,7 +118,22 @@ MONGO_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod
 kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 exec -it ${MONGO_POD} -- bash
 ```
 
-Once inside the pod, launch the `mongo` CLI:
+Once inside this pod, make sure all Mongo DNS entries for each region are resolvable. Otherwise the command to
+initialize the Mongo replica set below will fail. You can do this by installing DNS utilities such as `dig` and `nslookup` using:
+
+```
+apt-get update
+apt-get -y install dnsutils
+```
+
+Then use either `dig` or `nslookup` to perform one of the following lookups for each zone:
+
+```
+dig mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME> +noall +answer
+nslookup mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME>
+```
+
+Once all regions are resolvable, launch the `mongo` CLI:
 
 ```
 mongo
@@ -160,6 +175,8 @@ rs.status()
 ```
 
 Once you have all instances showing up as `SECONDARY` and this one as `PRIMARY`, you have a working MongoDB replica set that will replicate data across the cluster.
+
+Go ahead and exit out of the Mongo CLI and out of the Pod.
 
 ## Create Pac-Man Resources
 
@@ -267,3 +284,5 @@ done
 ### Delete DNS entries in Google Cloud DNS
 
 Delete the `mongo` and `pacman` DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+
+Follow [these cleaning steps](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.2#cleaning-up) to clean-up your federated cluster.

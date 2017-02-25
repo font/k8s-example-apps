@@ -58,7 +58,7 @@ cd ..
 You can test the image by running:
 
 ```
-docker run -p 8000:80 pacman-nginx-app
+docker run -p 8000:80 <user>/pacman-nginx-app
 ```
 
 And going to `http://localhost:8000/` to see if you get the Pacman game.
