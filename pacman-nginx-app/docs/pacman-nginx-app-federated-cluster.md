@@ -133,6 +133,13 @@ dig mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME> +noall +answer
 nslookup mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME>
 ```
 
+Or check to make sure the load balancer DNS A record contains an IP address for each zone:
+
+```
+dig mongo.default.federation.svc.<DNS_ZONE_NAME> +noall +answer
+nslookup mongo.default.federation.svc.<DNS_ZONE_NAME>
+```
+
 Once all regions are resolvable, launch the `mongo` CLI:
 
 ```
@@ -272,12 +279,18 @@ Delete Pac-Man replica set and service. Seeing the replica set removed from the 
 kubectl delete -f replicasets/pacman-replicaset.yaml -f services/pacman-service.yaml
 ```
 
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you'll have to remove the service
+If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
 in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
 
 ```
 for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
     delete svc pacman; \
+done
+```
+
+```
+for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
+    delete rs pacman; \
 done
 ```
 
