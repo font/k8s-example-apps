@@ -233,42 +233,6 @@ See who can get the highest score!
 
 ## Cleanup
 
-### Delete MongoDB Resources
-
-#### Delete MongoDB Replica Set and Service
-
-Delete MongoDB replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
-
-```
-kubectl delete -f replicasets/mongo-replicaset-pvc-rs0.yaml -f services/mongo-service.yaml
-```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you'll have to remove the service
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete svc mongo; \
-done
-```
-
-#### Delete MongoDB Persistent Volume Claims
-
-```
-for i in ${GCE_ZONES}; do \
-    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete -f persistentvolumeclaim/mongo-pvc.yaml; \
-done
-```
-
-#### Delete MongoDB Storage Class
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete -f storageclass/gce-storageclass.yaml; \
-done
-```
-
 ### Delete Pac-Man Resources
 
 #### Delete Pac-Man Replica Set and Service
@@ -291,6 +255,48 @@ done
 ```
 for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
     delete rs pacman; \
+done
+```
+
+### Delete MongoDB Resources
+
+#### Delete MongoDB Replica Set and Service
+
+Delete MongoDB replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
+
+```
+kubectl delete -f replicasets/mongo-replicaset-pvc-rs0.yaml -f services/mongo-service.yaml
+```
+
+If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
+in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
+
+```
+for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
+    delete svc mongo; \
+done
+```
+
+```
+for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
+    delete rs mongo; \
+done
+```
+
+#### Delete MongoDB Persistent Volume Claims
+
+```
+for i in ${GCE_ZONES}; do \
+    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
+    delete -f persistentvolumeclaim/mongo-pvc.yaml; \
+done
+```
+
+#### Delete MongoDB Storage Class
+
+```
+for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
+    delete -f storageclass/gce-storageclass.yaml; \
 done
 ```
 
