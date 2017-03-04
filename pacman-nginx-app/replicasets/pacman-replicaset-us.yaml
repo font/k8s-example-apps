@@ -1,0 +1,42 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  labels:
+    name: pacman
+  name: pacman
+  annotations:
+    federation.kubernetes.io/replica-set-preferences: |
+        {
+            "rebalance": true,
+            "clusters": {
+                "gce-us-west1": {
+                    "minReplicas": 1,
+                    "maxReplicas": 3,
+                    "weight": 1
+                },
+                "gce-us-central1": {
+                    "minReplicas": 1,
+                    "maxReplicas": 3,
+                    "weight": 1
+                },
+                "gce-us-east1": {
+                    "minReplicas": 1,
+                    "maxReplicas": 3,
+                    "weight": 1
+                }
+            }
+        }
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: pacman
+    spec:
+      containers:
+      - image: gcr.io/ifontlabs/pacman-nginx-app:latest
+        name: pacman
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http-server
