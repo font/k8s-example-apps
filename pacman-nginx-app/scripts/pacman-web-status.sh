@@ -10,8 +10,9 @@
 #
 
 URL="http://something.something.something.com/"
+SLEEP_DURATION=5 # In seconds
 GREP_CMD='grep -q pacman-canvas.js'
-DNS_SERVERS='ns-cloud-d1.googledomains.com,ns-cloud-d3.googledomains.com,ns-cloud-d2.googledomains.com,ns-cloud-d4.googledomains.com'
+#DNS_SERVERS='ns-cloud-c1.googledomains.com,ns-cloud-c3.googledomains.com,ns-cloud-c2.googledomains.com,ns-cloud-c4.googledomains.com'
 # curl manpage: The --dns-servers option requires that libcurl was built with a resolver
 #               backend that supports this operation. The c-ares backend is  the
 #               only such one.  (Added in 7.33.0)
@@ -29,5 +30,5 @@ while true; do
         break
     fi
     sudo killall -HUP dnsmasq
-    sleep 5
+    sleep ${SLEEP_DURATION}
 done
