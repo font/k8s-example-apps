@@ -14,8 +14,8 @@ Below is a diagram demonstrating the architecture of the game across the federat
 Instead of walking you through each of the steps to create a federated Kubernetes cluster here, perform one of the following:
 
 - Create the federated cluster by following the steps in my
-  [slightly modified version](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.2) of Kelsey Hightower's
-  Federated Kubernetes tutorial. It uses Kubernetes version 1.5.2 and you only need about 3 clusters e.g. west, central, and
+  [slightly modified version](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.3) of Kelsey Hightower's
+  Federated Kubernetes tutorial. It uses Kubernetes version 1.5.3 and you only need about 3 clusters e.g. west, central, and
   east so you can ignore any of the other regions. Also, it includes steps on adding the federation config map for kube-dns to
   consume as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
 - Follow the steps to create 3 GKE Kubernetes clusters in 3 regions e.g. west, central, and east using the guide
@@ -304,4 +304,4 @@ done
 
 Delete the `mongo` and `pacman` DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
 
-Follow [these cleaning steps](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.2#cleaning-up) to clean-up your federated cluster.
+Follow [these cleaning steps](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.3#cleaning-up) to clean-up your federated cluster.
