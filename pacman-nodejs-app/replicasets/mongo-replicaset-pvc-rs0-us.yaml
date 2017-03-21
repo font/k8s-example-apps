@@ -1,0 +1,52 @@
+apiVersion: extensions/v1beta1
+kind: ReplicaSet
+metadata:
+  labels:
+    name: mongo
+  name: mongo
+  annotations:
+    federation.kubernetes.io/replica-set-preferences: |
+        {   # Only 1 mongo instance per cluster due to PVC request
+            "rebalance": true,
+            "clusters": {
+                "gce-us-west1": {
+                    "minReplicas": 1,
+                    "maxReplicas": 1,
+                    "weight": 1
+                },
+                "gce-us-central1": {
+                    "minReplicas": 1,
+                    "maxReplicas": 1,
+                    "weight": 1
+                },
+                "gce-us-east1": {
+                    "minReplicas": 1,
+                    "maxReplicas": 1,
+                    "weight": 1
+                }
+            }
+        }
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        name: mongo
+    spec:
+      containers:
+      - image: mongo
+        name: mongo
+        ports:
+        - name: mongo
+          containerPort: 27017
+          hostPort: 27017
+        args:
+          - --replSet
+          - rs0
+        volumeMounts:
+          - name: mongo-db
+            mountPath: /data/db
+      volumes:
+        - name: mongo-db
+          persistentVolumeClaim:
+            claimName: mongo-storage
