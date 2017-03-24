@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 RUN git clone https://github.com/font/pacman.git .
 
 # Update mongo host from 'localhost' to 'mongo'
-RUN sed -i 's/localhost/mongo/' routes/config.js
+RUN sed -i 's/localhost/mongo/' lib/config.js
 
 # Install app dependencies
 RUN npm install
