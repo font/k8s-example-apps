@@ -70,7 +70,7 @@ The `gcloud container clusters create` command will configure `kubectl` with eac
 List the contexts stored in your local kubeconfig. These will be used later by the `kubefed` command.
 
 ```
-for c in $(kubectl config view -o jsonpath='{.contexts[*].name}'); do echo $c; done
+kubectl config get-contexts --output=name
 ```
 
 ## Cluster DNS Managed Zone
