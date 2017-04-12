@@ -108,7 +108,7 @@ or try it out on a federated cluster. Below are links to the two choices that wi
 
 Follow the instructions in the below links to test out different federation scenarios.
 
-1. [Add Kubernetes cluster to Federation and scale application onto it](docs/pacman-nodejs-app-federated-scenario-1.md).
+1. Add Kubernetes cluster across public cloud provider to Federation and scale application onto it.
 2. Remove Kubernetes cluster from Federation and scale application to remaining clusters.
 3. Destroy Kubernetes cluster and watch application scale to remaining clusters.
 4. Perform scenarios 1-3 across public cloud providers e.g. GCP <-> AWS <-> Azure
