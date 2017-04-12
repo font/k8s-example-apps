@@ -2,7 +2,7 @@
 
 This guide will walk you through creating two Kubernetes clusters and use a federation control plane
 to deploy the Pac-Man Node.js application onto each cluster. Then, add an additional Kubernetes cluster to
-the federation and scale application onto it.
+the federation and scale application onto it. This is all using a single cloud provider (GCP).
 
 ## High-Level Architecture
 
