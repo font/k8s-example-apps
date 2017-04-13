@@ -94,7 +94,7 @@ gcloud dns managed-zones create federation \
 
 Initialization is easy with the `kubefed init` command. We will use the us-west region to host our federated control plane.
 Replace the `--dns-zone-name` parameter to match the DNS zone name you just used above when you created the Google DNS Managed Zone.
-Be sure to include the trailing `.`.
+**Be sure to include the trailing `.` in the DNS zone name**.
 
 `kubefed init` will set some defaults if you do not override them on the command line.
 For example, `--dns-provider='google-clouddns'` is set by default which is what we want anyway. Additionally,
