@@ -95,6 +95,12 @@ that's closest to the application in the cluster.
 kubectl create -f services/mongo-service.yaml
 ```
 
+Wait until the mongo service has all the external IP addresses listed:
+
+```
+kubectl get svc mongo -o wide --watch
+```
+
 #### Create MongoDB Kubernetes Replica Set
 
 Now create the  MongoDB Replica Set that will use the `mongo-storage` persistent volume claim to mount the
@@ -109,12 +115,6 @@ Wait until the mongo replica set status is ready:
 
 ```
 kubectl get rs mongo -o wide --watch
-```
-
-Wait until the mongo service has all the external IP addresses listed:
-
-```
-kubectl get svc mongo -o wide --watch
 ```
 
 #### Create the MongoDB Replication Set
@@ -208,6 +208,12 @@ as well as a top level DNS A entry that will resolve to all zones for load balan
 kubectl create -f services/pacman-service.yaml
 ```
 
+Also wait and verify the service has an external IP for each replica:
+
+```
+kubectl get svc pacman -o wide --watch
+```
+
 #### Create the Pac-Man Replica Set
 
 We'll need to create the Pac-Man game replica set to access the application on port 80.
@@ -220,12 +226,6 @@ Wait until the replica set status is ready for all replicas:
 
 ```
 kubectl get rs pacman -o wide --watch
-```
-
-Also wait and verify the service has an external IP for each replica:
-
-```
-kubectl get svc pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for each replica, open up your browser and try to access it via its
