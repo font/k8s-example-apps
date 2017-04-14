@@ -99,15 +99,17 @@ sed -i 's/ifontlabs/YOUR_PROJECT_ID/' controllers/web-controller.yaml replicaset
 ## Set Up Kubernetes Cluster(s)
 
 You'll need to create 1 or at least 3 Kubernetes cluster(s) depending on whether you want to try out the Pac-Man app on 1 cluster,
-or try it out on a federated cluster. Below are links to the two choices that will guide you through it:
+or try it out on a federated cluster. Below are links that will guide you through it:
+
+### Single Kubernetes Cluster
 
 - [Pac-Man Node.js App Single Cluster](docs/pacman-nodejs-app-single-cluster.md)
-- [Pac-Man Node.js App Federated Cluster](docs/pacman-nodejs-app-federated-cluster.md)
 
-## Scenarios
+### Federated Kubernetes Cluster Scenarios
 
 Follow the instructions in the below links to test out different federation scenarios.
 
+1. [Pac-Man Node.js App Federated Cluster using GKE](docs/pacman-nodejs-app-federated-cluster.md)
 1. Add Kubernetes cluster across public cloud provider to Federation and scale application onto it.
 2. Remove Kubernetes cluster from Federation and scale application to remaining clusters.
 3. Destroy Kubernetes cluster and watch application scale to remaining clusters.
