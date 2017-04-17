@@ -11,17 +11,17 @@ metadata:
             "clusters": {
                 "gce-us-west1": {
                     "minReplicas": 1,
-                    "maxReplicas": 3,
+                    "maxReplicas": 1,
                     "weight": 1
                 },
                 "gce-us-central1": {
                     "minReplicas": 1,
-                    "maxReplicas": 3,
+                    "maxReplicas": 1,
                     "weight": 1
                 },
                 "gce-us-east1": {
                     "minReplicas": 1,
-                    "maxReplicas": 3,
+                    "maxReplicas": 1,
                     "weight": 1
                 }
             }
