@@ -120,7 +120,7 @@ kubectl get rs mongo -o wide --watch
 #### Create the MongoDB Replication Set
 
 We'll have to bootstrap the MongoDB instances to talk to each other in the replication set. For this,
-we need to run the following commands on the MongoDB instance you want to designate as the master. For our example,
+we need to run the following commands on the MongoDB instance you want to designate as the primary (master). For our example,
 let's use the us-west1-b instance:
 
 ```
@@ -208,7 +208,7 @@ as well as a top level DNS A entry that will resolve to all zones for load balan
 kubectl create -f services/pacman-service.yaml
 ```
 
-Also wait and verify the service has an external IP for each replica:
+Wait and verify the service has all the external IP addresses listed:
 
 ```
 kubectl get svc pacman -o wide --watch
@@ -229,14 +229,14 @@ kubectl get rs pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for each replica, open up your browser and try to access it via its
-DNS e.g. `http://pacman.default.federation.svc.federation.com/`. Make sure to replace `federation.com` with your DNS name.
+DNS e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/). Make sure to replace `federation.com` with your DNS name.
 
 You can also see all the DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
 
 ## Play Pac-Man
 
 Go ahead and play a few rounds of Pac-Man and invite your friends and colleagues by giving them your FQDN to your Pac-Man application
-e.g. `http://pacman.default.federation.svc.federation.com/` (replace `federation.com` with your DNS name).
+e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/) (replace `federation.com` with your DNS name).
 
 The DNS will load balance and resolve to any one of the zones in your federated kubernetes cluster. This is represented by the `Zone:`
 field at the top. When you save your score, it will automatically save the zone you were playing in and display it in the `Highscore` list.
