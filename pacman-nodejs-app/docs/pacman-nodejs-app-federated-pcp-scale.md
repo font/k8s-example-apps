@@ -38,9 +38,9 @@ Follow these steps:
 1. [Create 3 GKE Kubernetes clusters in 3 regions i.e. west, central, and east](kubernetes-cluster-federation.md#create-the-kubernetes-clusters)
 2. [Verify the clusters](kubernetes-cluster-federation.md#verify-the-clusters)
 3. [Store the GCP Project Name](kubernetes-cluster-federation.md#store-the-gcp-project-name)
-4. [Download and install kubefed and kubectl](kubernetes-cluster-federation.md#download-and-install-kubefed-and-kubectl)
-5. [Create Google DNS managed zone for cluster](kubernetes-cluster-federation.md#cluster-dns-managed-zone)
-5. Using [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) follow these steps:
+4. [Create Google DNS managed zone for cluster](kubernetes-cluster-federation.md#cluster-dns-managed-zone)
+5. [Download and install kubefed and kubectl](kubernetes-cluster-federation.md#download-and-install-kubefed-and-kubectl)
+6. Using [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) follow these steps:
     1. [Initialize](kubernetes-cluster-federation.md#initialize-the-federated-control-plane) the federated control plane
     2. [Set kubectl to use the federation context](kubernetes-cluster-federation.md#use-federation-context)
     3. Join only the [west](kubernetes-cluster-federation.md#gce-us-west1-1) and [central](kubernetes-cluster-federation.md#gce-us-central1-1) regions
