@@ -12,6 +12,11 @@ Use the `gcloud container clusters create` command to create a Kubernetes cluste
 
 Run each command separately to build the clusters in parallel.
 
+If you're looking to deploy a specific version of Kubernetes other than the current default supported by Google Cloud Platform,
+GCP supports the `--cluster-version` option as part of the `gcloud container clusters create` command.
+For example, if you'd like to deploy Kubernetes version 1.6.1, then pass in `--cluster-version=1.6.1`. See
+[Google's Container Engine Release Notes](https://cloud.google.com/container-engine/release-notes) for supported versions of Kubernetes.
+
 #### gce-us-west1
 
 ```
@@ -49,30 +54,6 @@ gcloud container clusters list
 export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 ```
 
-#### Download and Install kubefed and kubectl
-
-Replace the version string with whatever version you want in the `curl` command below.
-
-```
-curl -O https://storage.googleapis.com/kubernetes-release/release/v1.5.5/kubernetes-client-linux-amd64.tar.gz
-tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubefed
-tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubectl
-sudo cp kubernetes/client/bin/kubefed /usr/local/bin
-sudo chmod +x /usr/local/bin/kubefed
-sudo cp kubernetes/client/bin/kubectl /usr/local/bin
-sudo chmod +x /usr/local/bin/kubectl
-```
-
-#### Configuring kubeconfig
-
-The `gcloud container clusters create` command will configure `kubectl` with each of the contexts and grab the credentials for each cluster.
-
-List the contexts stored in your local kubeconfig. These will be used later by the `kubefed` command.
-
-```
-kubectl config get-contexts --output=name
-```
-
 ## Cluster DNS Managed Zone
 
 Kubernetes federated services are able to manage external DNS entries based on services created across a federated set of Kubernetes clusters.
@@ -90,6 +71,30 @@ gcloud dns managed-zones create federation \
   --dns-name federation.com
 ```
 
+## Download and Install kubefed and kubectl
+
+Replace the version string with whatever version you want in the `curl` command below.
+
+```
+curl -O https://storage.googleapis.com/kubernetes-release/release/v1.5.5/kubernetes-client-linux-amd64.tar.gz
+tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubefed
+tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubectl
+sudo cp kubernetes/client/bin/kubefed /usr/local/bin
+sudo chmod +x /usr/local/bin/kubefed
+sudo cp kubernetes/client/bin/kubectl /usr/local/bin
+sudo chmod +x /usr/local/bin/kubectl
+```
+
+#### Configuring kubectl
+
+The `gcloud container clusters create` command will configure `kubectl` with each of the contexts and grab the credentials for each cluster.
+
+List the contexts stored in your local kubeconfig. These will be used later by the `kubefed` command.
+
+```
+kubectl config get-contexts --output=name
+```
+
 ## Initialize the Federated Control Plane
 
 Initialization is easy with the `kubefed init` command. We will use the us-west region to host our federated control plane.
@@ -97,10 +102,10 @@ Replace the `--dns-zone-name` parameter to match the DNS zone name you just used
 **Be sure to include the trailing `.` in the DNS zone name**.
 
 `kubefed init` will set some defaults if you do not override them on the command line.
-For example, `--dns-provider='google-clouddns'` is set by default which is what we want anyway. Additionally,
-you can pass`--image='gcr.io/google_containers/hyperkube-amd64:v1.5.5'` to specify a different version of the
-federation API server and controller manager. By default, the image version it pulls will match the version of `kubefed` you
-are using i.e. `v1.5.5` in this case.
+For example, `--dns-provider='google-clouddns'` is set by default which is what we want anyway. However, starting with `kubefed` version
+1.6, this argument is mandatory. Additionally, you can pass`--image='gcr.io/google_containers/hyperkube-amd64:v1.5.5'`
+to specify a different version of the federation API server and controller manager. By default, the image version it pulls will
+match the version of `kubefed` you are using i.e. `v1.5.5` in this case.
 
 ```
 kubefed init federation \
