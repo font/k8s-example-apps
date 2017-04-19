@@ -32,7 +32,7 @@ We have a couple options to walk you through each of the steps to create a feder
    Federated Kubernetes tutorial. It uses Kubernetes version 1.5.3 and you only need about 3 clusters e.g. west, central, and
    east so you can ignore any of the other regions. Also, it includes steps on adding the federation config map for kube-dns to
    consume as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
-2. Create 3 GKE Kubernetes clusters in 3 regions e.g. west, central, and east.
+2. Create 3 GKE Kubernetes clusters in 3 regions e.g. us-west, us-central, and us-east.
    Then use [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) to initialize and join your
    clusters together followed by steps on adding the federation config map for kube-dns as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
    [Follow these steps to get set up using this method](kubernetes-cluster-federation.md).
