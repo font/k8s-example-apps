@@ -35,17 +35,17 @@ export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 
 Follow these steps:
 
-1. [Create 3 GKE Kubernetes clusters in 3 regions i.e. west, central, and east](kubernetes-cluster-federation.md#create-the-kubernetes-clusters)
-2. [Verify the clusters](kubernetes-cluster-federation.md#verify-the-clusters)
-3. [Store the GCP Project Name](kubernetes-cluster-federation.md#store-the-gcp-project-name)
-4. [Create Google DNS managed zone for cluster](kubernetes-cluster-federation.md#cluster-dns-managed-zone)
-5. [Download and install kubefed and kubectl](kubernetes-cluster-federation.md#download-and-install-kubefed-and-kubectl)
+1. [Create 3 GKE Kubernetes clusters in 3 regions i.e. west, central, and east](kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
+2. [Verify the clusters](kubernetes-cluster-gke-federation.md#verify-the-clusters)
+3. [Store the GCP Project Name](kubernetes-cluster-gke-federation.md#store-the-gcp-project-name)
+4. [Create Google DNS managed zone for cluster](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone)
+5. [Download and install kubefed and kubectl](kubernetes-cluster-gke-federation.md#download-and-install-kubefed-and-kubectl)
 6. Using [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) follow these steps:
-    1. [Initialize](kubernetes-cluster-federation.md#initialize-the-federated-control-plane) the federated control plane
-    2. [Set kubectl to use the federation context](kubernetes-cluster-federation.md#use-federation-context)
-    3. Join only the [west](kubernetes-cluster-federation.md#gce-us-west1-1) and [central](kubernetes-cluster-federation.md#gce-us-central1-1) regions
-    4. [Verify the clusters in the federation](kubernetes-cluster-federation.md#verify)
-    4. [Update KubeDNS](kubernetes-cluster-federation.md#update-kubedns) in all the regions with the federation config map
+    1. [Initialize](kubernetes-cluster-gke-federation.md#initialize-the-federated-control-plane) the federated control plane
+    2. [Set kubectl to use the federation context](kubernetes-cluster-gke-federation.md#use-federation-context)
+    3. Join only the [west](kubernetes-cluster-gke-federation.md#gce-us-west1-1) and [central](kubernetes-cluster-gke-federation.md#gce-us-central1-1) regions
+    4. [Verify the clusters in the federation](kubernetes-cluster-gke-federation.md#verify)
+    4. [Update KubeDNS](kubernetes-cluster-gke-federation.md#update-kubedns) in all the regions with the federation config map
 
 #### Export the zones your clusters are in
 
@@ -253,8 +253,8 @@ With the federation control plane already initialized, you just need to join one
 the application onto it.
 
 Using [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/):
-1. Join the [east](kubernetes-cluster-federation.md#gce-us-east1-1) region
-2. [Verify the clusters in the federation](kubernetes-cluster-federation.md#verify)
+1. Join the [east](kubernetes-cluster-gke-federation.md#gce-us-east1-1) region
+2. [Verify the clusters in the federation](kubernetes-cluster-gke-federation.md#verify)
 
 #### Export the new zones to include the new cluster
 
@@ -487,4 +487,4 @@ Delete the `mongo` and `pacman` DNS entries that were created in your [Google DN
 
 #### Cleanup rest of federation cluster
 
-[Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-federation.md#cleanup).
+[Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-gke-federation.md#cleanup).

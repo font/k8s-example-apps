@@ -35,7 +35,7 @@ We have a couple options to walk you through each of the steps to create a feder
 2. Create 3 GKE Kubernetes clusters in 3 regions e.g. us-west, us-central, and us-east.
    Then use [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) to initialize and join your
    clusters together followed by steps on adding the federation config map for kube-dns as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
-   [Follow these steps to get set up using this method](kubernetes-cluster-federation.md).
+   [Follow these steps to get set up using this method](kubernetes-cluster-gke-federation.md).
 
 #### Store the GCP Project Name
 
@@ -321,4 +321,4 @@ Delete the `mongo` and `pacman` DNS entries that were created in your [Google DN
 Follow either of these two guides depending on which setup you followed above:
 
 1. [Steps to clean-up your manually created federation cluster](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.3#cleaning-up).
-2. [Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-federation.md#cleanup).
+2. [Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-gke-federation.md#cleanup).
