@@ -109,8 +109,8 @@ or try it out on a federated cluster. Below are links that will guide you throug
 
 Follow the instructions in the below links to test out different federation scenarios.
 
-1. [Pac-Man Node.js App Federated Cluster using GKE](docs/pacman-nodejs-app-federated-cluster.md)
-1. [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-pcp-scale.md)
-2. Remove Kubernetes cluster from Federation and scale application to remaining clusters.
-3. Destroy Kubernetes cluster and watch application scale to remaining clusters.
-4. Perform scenarios 1-3 across public cloud providers e.g. GCP <-> AWS <-> Azure
+1. [Pac-Man application federated cluster using GKE](docs/pacman-nodejs-app-federated-cluster.md)
+2. [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-gke-scale.md)
+3. Remove Kubernetes cluster from Federation and scale application to remaining clusters.
+4. Destroy Kubernetes cluster and watch application scale to remaining clusters.
+5. Pac-Man application federated cluster using multiple public cloud providers: GKE, AWS, and Azure.
