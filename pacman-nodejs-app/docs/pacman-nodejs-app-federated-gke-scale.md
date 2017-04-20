@@ -308,7 +308,7 @@ directory that is to contain the MongoDB database files. In addition, we will ad
 in order to replicate the MongoDB data set across to the new cluster.
 
 ```
-kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us.yaml
+kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us-gke.yaml
 ```
 
 Wait until the mongo replica set status is ready:
@@ -446,7 +446,7 @@ done
 Delete MongoDB replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
 
 ```
-kubectl delete -f replicasets/mongo-replicaset-pvc-rs0-us.yaml -f services/mongo-service.yaml
+kubectl delete -f replicasets/mongo-replicaset-pvc-rs0-us-gke.yaml -f services/mongo-service.yaml
 ```
 
 If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
