@@ -112,7 +112,7 @@ directory that is to contain the MongoDB database files. In addition, we will pa
 to `mongod` in order to create a MongoDB replica set.
 
 ```
-kubectl create -f replicasets/mongo-replicaset-pvc-rs0-us-pcp-scale-1.yaml
+kubectl create -f replicasets/mongo-replicaset-pvc-rs0-us-gke-scale-1.yaml
 ```
 
 Wait until the mongo replica set status is ready:
