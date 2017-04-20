@@ -220,7 +220,7 @@ kubectl get svc pacman -o wide --watch
 We'll need to create the Pac-Man game replica set to access the application on port 80.
 
 ```
-kubectl create -f replicasets/pacman-replicaset-us-pcp-scale-1.yaml
+kubectl create -f replicasets/pacman-replicaset-us-gke-scale-1.yaml
 ```
 
 Wait until the replica set status is ready for all replicas:
