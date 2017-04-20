@@ -392,7 +392,7 @@ kubectl get svc pacman -o wide --watch
 We'll need to scale the Pac-Man game to the new cluster.
 
 ```
-kubectl apply -f replicasets/pacman-replicaset-us.yaml
+kubectl apply -f replicasets/pacman-replicaset-us-gke.yaml
 ```
 
 Wait until the replica set status is ready for the new replica:
@@ -421,7 +421,7 @@ new us-east region and continue playing Pac-Man!
 Delete Pac-Man replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
 
 ```
-kubectl delete -f replicasets/pacman-replicaset-us.yaml -f services/pacman-service.yaml
+kubectl delete -f replicasets/pacman-replicaset-us-gke.yaml -f services/pacman-service.yaml
 ```
 
 If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
