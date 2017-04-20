@@ -163,7 +163,7 @@ kubectl get clusters -w
 ## Update KubeDNS
 
 Lastly, now that the federated cluster is up and ready, we need to update kube-dns in each cluster to specify the federation domain name.
-Unfortunately, this is a manual step that `kubefed` does not do for you yet until hopefully the Kubernetes 1.6 release. See Kubernetes issue #38400
+Unfortunately, this is a manual step that `kubefed` does not do for you yet unless you're using Kubernetes 1.6 release. See Kubernetes issue #38400
 and PR #39338 for more details.
 
 To update the kube-dns we will add a config map to the kube-dns namespace in each cluster specifying the federation domain name.
