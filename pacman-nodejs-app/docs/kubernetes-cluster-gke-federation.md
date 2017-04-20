@@ -102,8 +102,8 @@ Replace the `--dns-zone-name` parameter to match the DNS zone name you just used
 **Be sure to include the trailing `.` in the DNS zone name**.
 
 `kubefed init` will set some defaults if you do not override them on the command line.
-For example, `--dns-provider='google-clouddns'` is set by default which is what we want anyway. However, starting with `kubefed` version
-1.6, this argument is mandatory. Additionally, you can pass`--image='gcr.io/google_containers/hyperkube-amd64:v1.5.6'`
+For example, `--dns-provider='google-clouddns'` is set by default in Kubernetes versions <= 1.5. However, starting with `kubefed` version
+1.6, this argument is mandatory. Additionally, you can pass `--image='gcr.io/google_containers/hyperkube-amd64:v1.5.6'`
 to specify a different version of the federation API server and controller manager. By default, the image version it pulls will
 match the version of `kubefed` you are using i.e. `v1.5.6` in this case.
 
