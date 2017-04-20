@@ -76,7 +76,7 @@ gcloud dns managed-zones create federation \
 Replace the version string with whatever version you want in the `curl` command below.
 
 ```
-curl -O https://storage.googleapis.com/kubernetes-release/release/v1.5.5/kubernetes-client-linux-amd64.tar.gz
+curl -O https://storage.googleapis.com/kubernetes-release/release/v1.5.6/kubernetes-client-linux-amd64.tar.gz
 tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubefed
 tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubectl
 sudo cp kubernetes/client/bin/kubefed /usr/local/bin
@@ -103,9 +103,9 @@ Replace the `--dns-zone-name` parameter to match the DNS zone name you just used
 
 `kubefed init` will set some defaults if you do not override them on the command line.
 For example, `--dns-provider='google-clouddns'` is set by default which is what we want anyway. However, starting with `kubefed` version
-1.6, this argument is mandatory. Additionally, you can pass`--image='gcr.io/google_containers/hyperkube-amd64:v1.5.5'`
+1.6, this argument is mandatory. Additionally, you can pass`--image='gcr.io/google_containers/hyperkube-amd64:v1.5.6'`
 to specify a different version of the federation API server and controller manager. By default, the image version it pulls will
-match the version of `kubefed` you are using i.e. `v1.5.5` in this case.
+match the version of `kubefed` you are using i.e. `v1.5.6` in this case.
 
 ```
 kubefed init federation \
