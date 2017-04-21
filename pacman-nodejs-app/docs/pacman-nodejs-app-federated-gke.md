@@ -239,7 +239,7 @@ Go ahead and play a few rounds of Pac-Man and invite your friends and colleagues
 e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/) (replace `federation.com` with your DNS name).
 
 The DNS will load balance and resolve to any one of the zones in your federated kubernetes cluster. This is represented by the `Zone:`
-field at the top. When you save your score, it will automatically save the zone you were playing in and display it in the `Highscore` list.
+field at the top. When you save your score, it will automatically save the zone you were playing in and display it in the High Score list.
 
 See who can get the highest score!
 
