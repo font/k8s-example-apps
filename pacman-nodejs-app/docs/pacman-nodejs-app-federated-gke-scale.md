@@ -427,6 +427,8 @@ kubectl delete -f replicasets/pacman-replicaset-us-gke.yaml -f services/pacman-s
 If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
 in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
 
+Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
+
 ```
 for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
     delete svc pacman; \
@@ -451,6 +453,8 @@ kubectl delete -f replicasets/mongo-replicaset-pvc-rs0-us-gke.yaml -f services/m
 
 If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
 in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
+
+Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
 
 ```
 for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
