@@ -86,7 +86,7 @@ You'll want to tag your previously created Docker image to use the Google Cloud 
 
 ```
 docker tag <user>/pacman-nodejs-app gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
-gcloud docker push gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
+gcloud docker -- push gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
 ```
 
 Once you've pushed your image, you'll need to update the Kubernetes resources to point to your image before you continue
@@ -113,4 +113,4 @@ Follow the instructions in the below links to test out different federation scen
 2. [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-gke-scale.md)
 3. Remove Kubernetes cluster from Federation and scale application to remaining clusters.
 4. Destroy Kubernetes cluster and watch application scale to remaining clusters.
-5. Pac-Man application federated cluster using multiple public cloud providers: GKE, AWS, and Azure.
+5. [Pac-Man application federated cluster using multiple public cloud providers: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)
