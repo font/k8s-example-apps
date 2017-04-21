@@ -8,7 +8,7 @@ and Pac-Man application will be deployed using the following public cloud provid
 
 Below is a diagram demonstrating the architecture of the game across the federated kubernetes cluster after all the steps are completed.
 
-![Pac-Man Game Architecture](images/.png)
+![Pac-Man Game Architecture](images/Kubernetes-Federation-Game-Multi-Cloud.png)
 
 ## Prerequisites
 
