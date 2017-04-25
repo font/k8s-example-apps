@@ -98,18 +98,6 @@ Before proceeding, make sure we're using the newly created `federation` context 
 kubectl config use-context federation
 ```
 
-#### Join All Clusters
-
-If you want to use the name of the contexts as the cluster name then you can join all the clusters with one loop using:
-
-```bash
-for c in ${JOIN_CLUSTERS}; do
-    kubefed join ${c} \
-        --host-cluster-context=${HOST_CLUSTER} \
-        --cluster-context=${c}
-done
-```
-
 #### Join Individual Clusters
 
 If you want to join each cluster individually such as to give it a unique name, then join each one like so:
@@ -185,16 +173,6 @@ You should now have a working federated Kubernetes cluster spanning each zone.
 ## Cleanup
 
 Cleanup is basically some of the setup steps in reverse.
-
-#### Unjoin All Clusters
-
-If you used the name of the contexts as the cluster name then you can unjoin all the clusters with one loop using:
-
-```bash
-for c in ${JOIN_CLUSTERS}; do
-    kubefed unjoin ${c} --host-cluster-context=${HOST_CLUSTER}
-done
-```
 
 #### Unjoin Individual Clusters
 
