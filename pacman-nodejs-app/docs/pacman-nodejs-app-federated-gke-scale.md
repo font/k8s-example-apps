@@ -403,7 +403,8 @@ kubectl get rs pacman -o wide --watch
 
 Once the new `pacman` replica set is ready, open up your browser and try to access it via its specific
 DNS e.g. [http://pacman.default.federation.svc.us-east1.federation.com/](http://pacman.default.federation.svc.us-east1.federation.com/) or
-using the top-level DNS [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/). Make sure to replace `federation.com` with your DNS name.
+using the top-level DNS [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/).
+Make sure to replace `federation.com` with your DNS name.
 
 You can also see all the DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
 
