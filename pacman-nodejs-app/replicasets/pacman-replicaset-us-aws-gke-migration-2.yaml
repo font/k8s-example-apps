@@ -10,8 +10,8 @@ metadata:
             "rebalance": true,
             "clusters": {
                 "gce-us-west1": {
-                    "minReplicas": 1,
-                    "maxReplicas": 1,
+                    "minReplicas": 2,
+                    "maxReplicas": 2,
                     "weight": 1
                 },
                 "aws-us-central1": {
@@ -22,7 +22,7 @@ metadata:
             }
         }
 spec:
-  replicas: 1
+  replicas: 2
   template:
     metadata:
       labels:
