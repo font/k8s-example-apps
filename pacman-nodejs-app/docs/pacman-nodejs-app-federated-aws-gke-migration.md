@@ -57,12 +57,18 @@ Using the list of contexts for `kubectl`:
 
 ```bash
 kubectl config get-contexts --output=name
+kubectl config use-context federation
+kubectl get clusters
+export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
+echo $GCP_PROJECT
 ```
 
 Determine which are the contexts in your federation that you want to deploy to and assign them to a variable:
 
 ```bash
-export KUBE_FED_CONTEXTS="us-east-1.subdomain.example.com"
+export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 us-east-1.subdomain.example.com"
+git clone https://github.com/font/k8s-example-apps.git
+cd k8s-example-apps/pacman-nodejs-app
 ```
 
 ## Create MongoDB Resources
@@ -70,7 +76,14 @@ export KUBE_FED_CONTEXTS="us-east-1.subdomain.example.com"
 #### Create MongoDB Storage Class
 
 We need to create persistent volume claims for our MongoDB to persist the database. For this we'll deploy the corresponding Storage Class to
-utilize AWS Elastic Block Store.
+utilize GCE Persistent Disks and AWS Elastic Block Store.
+
+#### GCE Persistent Disk
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    create -f storageclass/gce-storageclass.yaml
+```
 
 ##### AWS Elastic Block Store
 
@@ -84,16 +97,16 @@ kubectl --context=us-east-1.subdomain.example.com \
 Now that we have the storage class created in each cluster we'll create the PVC:
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} \
         create -f persistentvolumeclaim/mongo-pvc.yaml
 done
 ```
 
-Verify the PVCs are bound in each cluster:
+Verify the PVCs are bound in each clusters:
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} \
         get pvc mongo-storage
 done
@@ -106,6 +119,7 @@ the host it connects to instead of `localhost`. Using `mongo` in each applicatio
 that's closest to the application in the cluster.
 
 ```bash
+cat services/mongo-service.yaml
 kubectl create -f services/mongo-service.yaml
 ```
 
@@ -122,7 +136,8 @@ directory that is to contain the MongoDB database files. In addition, we will pa
 to `mongod` in order to create a MongoDB replica set.
 
 ```bash
-kubectl create -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migrate-1.yaml
+cat replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-1.yaml
+kubectl create -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-1.yaml
 ```
 
 Wait until the mongo replica set status is ready:
@@ -138,13 +153,13 @@ we need to run the following commands on the MongoDB instance you want to design
 let's use the GKE us-west1-b instance:
 
 ```bash
-MONGO_POD=$(kubectl --context=us-east-1.subdomain.example.com get pod \
+MONGO_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=us-east-1.subdomain.example.com exec -it ${MONGO_POD} -- bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 exec -it ${MONGO_POD} -- bash
 ```
 
-Once inside this pod, make sure all Mongo DNS entries are resolvable. Otherwise the command to
+Once inside this pod, make sure all Mongo DNS entries for each region are resolvable. Otherwise the command to
 initialize the Mongo replica set below will fail. You can do this by installing DNS utilities such as `dig` and `nslookup` using:
 
 ```bash
@@ -152,18 +167,21 @@ apt-get update
 apt-get -y install dnsutils
 ```
 
-Then use either `dig` or `nslookup` to perform the following lookup:
+Then use either `dig` or `nslookup` to perform the following lookups for each zone:
 
 ```bash
-dig mongo.default.federation.svc.us-east-1.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.default.federation.svc.us-east-1.<DNS_ZONE_NAME>
+dig mongo.default.federation.svc.us-west1.example.com +noall +answer
+nslookup mongo.default.federation.svc.us-west1.example.com
+
+dig mongo.default.federation.svc.us-east-1.example.com +noall +answer
+nslookup mongo.default.federation.svc.us-east-1.example.com
 ```
 
-Or check to make sure the load balancer DNS A record contains an IP address:
+Or check to make sure the load balancer DNS A record contains an IP address for each zone:
 
 ```bash
-dig mongo.default.federation.svc.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.default.federation.svc.<DNS_ZONE_NAME>
+dig mongo.default.federation.svc.example.com +noall +answer
+nslookup mongo.default.federation.svc.example.com
 ```
 
 Once the DNS entries are resolvable, launch the `mongo` CLI:
@@ -173,7 +191,7 @@ mongo
 ```
 
 Now we'll create an initial configuration specifying the one mongo in our replication set. In our example,
-we'll use the AWS east instance. Make sure to replace `federation.com` with the DNS zone name you created.
+we'll use the GKE west and AWS east instances. Make sure to replace `example.com` with the DNS zone name you created.
 
 ```
 initcfg = {
@@ -181,7 +199,11 @@ initcfg = {
         "members" : [
                 {
                         "_id" : 0,
-                        "host" : "mongo.default.federation.svc.us-east-1.federation.com:27017"
+                        "host" : "mongo.default.federation.svc.us-west1.example.com:27017"
+                },
+                {
+                        "_id" : 1,
+                        "host" : "mongo.default.federation.svc.us-east-1.example.com:27017"
                 }
         ]
 }
@@ -199,8 +221,8 @@ Check the status until this instance shows as `PRIMARY`:
 rs.status()
 ```
 
-Once you have the instance showing up as `PRIMARY`, you have a working MongoDB replica set
-that will replicate data across any of the replica set members in the federated cluster.
+Once you have all instances showing up as `SECONDARY` and this one as `PRIMARY`, you have a working MongoDB replica set
+that will replicate data across the clusters.
 
 Go ahead and exit out of the Mongo CLI and out of the Pod.
 
@@ -212,6 +234,7 @@ This component creates the necessary `pacman` federation DNS entries for each cl
 as well as a top level DNS A entry that will resolve to all zones for load balancing.
 
 ```bash
+cat services/pacman-service.yaml
 kubectl create -f services/pacman-service.yaml
 ```
 
@@ -226,26 +249,37 @@ kubectl get svc pacman -o wide --watch
 We'll need to create the Pac-Man game replica set to access the application on port 80.
 
 ```bash
-kubectl create -f replicasets/pacman-replicaset-us-aws-gke-migrate-1.yaml
+cat replicasets/pacman-replicaset-us-aws-gke-migration-1.yaml
+kubectl create -f replicasets/pacman-replicaset-us-aws-gke-migration-1.yaml
 ```
 
-Wait until the replica set status is ready for the replica:
+Wait until the replica set status is ready for all replicas:
 
 ```bash
 kubectl get rs pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for the replica, open up your browser and try to access it via its
-DNS e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/).
-Make sure to replace `federation.com` with your DNS name.
+DNS e.g. [http://pacman.default.federation.svc.example.com/](http://pacman.default.federation.svc.example.com/).
+Make sure to replace `example.com` with your DNS name.
 
-You can also see all the DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+#### Check DNS Updates
+
+You can see all the DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+
+You can also query them from the command line:
+
+```bash
+gcloud dns record-sets list --zone federation --filter='name ~ mongo OR name ~ pacman'
+```
+
+Note: You may experience delays in DNS updates and you may need to clear your DNS cache from your client in order to see the updates.
 
 ## Play Pac-Man
 
 Go ahead and play a few rounds of Pac-Man and invite your friends and colleagues by giving them your FQDN to your Pac-Man application
-e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/)
-(replace `federation.com` with your DNS name).
+e.g. [http://pacman.default.federation.svc.example.com/](http://pacman.default.federation.svc.example.com/)
+(replace `example.com` with your DNS name).
 
 The DNS will load balance and resolve to any of the available zones in your federated kubernetes cluster. This is represented by the `Cloud:` and `Zone:`
 fields at the top, as well as the `Host:` Pod that it's running on. When you save your score, it will automatically save these fields corresponding
@@ -253,204 +287,19 @@ to the instance you were playing on and display it in the High Score list.
 
 See who can get the highest score!
 
-## Scale Pac-Man to GKE Kubernetes Cluster
-
-Once you've played Pac-Man to verify your application has been properly deployed, we'll scale the application to the GKE Kubernetes cluster.
-
-#### Export the Cluster Contexts
-
-Using the list of contexts for `kubectl`:
-
-```bash
-kubectl config get-contexts --output=name
-```
-
-Add the GKE federation context to your variable:
-
-```bash
-export KUBE_FED_CONTEXTS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 us-east-1.subdomain.example.com"
-```
-
-#### Scale the MongoDB Resources
-
-###### Create the MongoDB Storage Class
-
-We need to create persistent volume claims for our MongoDB to persist the database. For this we'll deploy the corresponding Storage Class to
-utilize GCE Persistent Disks.
-
-```bash
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
-    create -f storageclass/gce-storageclass.yaml
-```
-
-###### Create MongoDB Persistent Volume Claims
-
-Now that we have the storage class created in the cluster we'll create the PVC:
-
-```bash
-for i in ${KUBE_FED_CONTEXTS}; do
-    kubectl --context=${i} \
-        create -f persistentvolumeclaim/mongo-pvc.yaml
-done
-```
-
-Verify the PVC is bound in the cluster:
-
-```bash
-for i in ${KUBE_FED_CONTEXTS}; do
-    kubectl --context=${i} \
-        get pvc mongo-storage
-done
-```
-
-###### Scale MongoDB Kubernetes Replica Set
-
-Now scale the MongoDB Replica Set that will use the `mongo-storage` persistent volume claim to mount the
-directory that is to contain the MongoDB database files. In addition, we will add the new MongoDB replica to the existing replica set
-in order to replicate the MongoDB data set across to the GKE cluster.
-
-```
-kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migrate-2.yaml
-```
-
-Wait until the mongo replica set status is ready:
-
-```
-kubectl get rs mongo -o wide --watch
-```
-
-###### Scale the MongoDB Replication Set
-
-We'll have to add the MongoDB instance to the existing MongoDB replica set. For this, we need to run the following command on the MongoDB
-instance you designated as the primary (master). For our example, we used the us-east-1a instance so let's re-use it:
-
-```
-kubectl --context=us-east-1.subdomain.example.com exec -it ${MONGO_POD} -- bash
-```
-
-Once inside this pod, feel free to make sure the new Mongo DNS entry for the us-west1 region is resolvable. Otherwise the command to
-add to the Mongo replica set below will fail. You can try to add to the Mongo replica set first and come back here if you have problems.
-You can verify the Mongo DNS entries by installing DNS utilities such as `dig` and `nslookup` using:
-
-```
-apt-get update
-apt-get -y install dnsutils
-```
-
-Then use either `dig` or `nslookup` to perform the following lookup for the us-east zone:
-
-```
-dig mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME>
-```
-
-Also check to make sure the load balancer DNS A record contains an IP address for each zone:
-
-```
-dig mongo.default.federation.svc.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.default.federation.svc.<DNS_ZONE_NAME>
-```
-
-Once all regions are resolvable, launch the `mongo` CLI:
-
-```
-mongo
-```
-
-Now we'll add the new mongo to our replication set. In our example,
-we'll be adding the us-west instance. Make sure to replace `federation.com` with the DNS zone name you created.
-
-Add to the MongoDB replication set:
-
-```
-rs.add('mongo.default.federation.svc.us-west1.federation.com:27017')
-```
-
-Check the status until the new instance shows as `SECONDARY`:
-
-```
-rs.status()
-```
-
-Once you have the instance showing up as `SECONDARY`, you have added a MongoDB instance to the replica set that will replicate data across to the new cluster.
-
-Go ahead and exit out of the Mongo CLI and out of the Pod.
-
-### Scale Pac-Man Resources
-
-#### Scale the Pac-Man Replica Set
-
-We'll need to scale the Pac-Man game to the new cluster.
-
-```
-kubectl apply -f replicasets/pacman-replicaset-us-aws-gke-migrate-1.yaml
-```
-
-Wait until the replica set status is ready for the new replica:
-
-```
-kubectl get rs pacman -o wide --watch
-```
-
-Once the new `pacman` replica set is ready, open up your browser and try to access it via its specific
-DNS e.g. [http://pacman.default.federation.svc.us-west1.federation.com/](http://pacman.default.federation.svc.us-west1.federation.com/) or
-using the top-level DNS [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/).
-Make sure to replace `federation.com` with your DNS name.
-
-You can also see all the DNS entries that were updated in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
-
-#### Play Scale out Pac-Man
-
-Now you should have Pac-Man scaled onto a new federated Kubernetes cluster. You can verify any previously persisted data has been replicated to the
-new us-west region and continue playing Pac-Man!
-
 ## Migrate Pac-Man to GKE Kubernetes Cluster
 
-Once you've played Pac-Man to verify your application has been properly scaled, we'll migrate the application to the GKE Kubernetes cluster only.
+Once you've played Pac-Man to verify your application has been properly deployed, we'll migrate the application to the GKE Kubernetes cluster only.
 
 #### Migrate the MongoDB Resources
 
-###### Migrate the MongoDB Replication Set
-
-To force a MongoDB member to be primary using database commands without going through a failure scenario to elect a new primary,
-we'll need to log into the MongoDB primary instance and force it to step down. For this, we need to run the following command on the MongoDB
-instance you designated as the primary (master). For our example, we used the us-east-1a instance so let's re-use it:
-
-```
-kubectl --context=us-east-1.subdomain.example.com exec -it ${MONGO_POD} -- bash
-```
-
-Launch the `mongo` CLI:
-
-```
-mongo
-```
-
-Now we'll force this primary (master) instance to step down so that the us-west instance becomes the new primary (master) instance.
-
-Step down the MongoDB replication set primary instance for 120 seconds:
-
-```
-rs.stepDown(120)
-```
-
-*mongo.default.federation.svc.us-west1.federation.com becomes primary*
-
-Check the status until the us-west instance shows as `PRIMARY`:
-
-```
-rs.status()
-```
-
-Once you've made the MongoDB instances reverse roles, go ahead and exit out of the Mongo CLI and out of the Pod.
-
 ###### Migrate MongoDB Kubernetes Replica Set
 
-Now that we have the GKE us-west MongoDB instance as the new primary, we will migrate the MongoDB instance away from the
-east AWS cluster:
+Now we will migrate the MongoDB instance away from the east AWS cluster:
 
 ```
-kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migrate-3.yaml
+cat replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-2.yaml
+kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-2.yaml
 ```
 
 Wait until the mongo replica set status is ready and reflects the changes:
@@ -466,7 +315,8 @@ kubectl get rs mongo -o wide --watch
 We'll need to migrate the Pac-Man game to the us-west cluster.
 
 ```
-kubectl apply -f replicasets/pacman-replicaset-us-aws-gke-migrate-3.yaml
+cat replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
+kubectl apply -f replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
 ```
 
 Wait until the replica set status is ready and reflects the changes:
@@ -475,12 +325,24 @@ Wait until the replica set status is ready and reflects the changes:
 kubectl get rs pacman -o wide --watch
 ```
 
-Once the new `pacman` replica set is ready, open up your browser and try to access it
-using the top-level DNS [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/).
-Make sure to replace `federation.com` with your DNS name. If you try to access the old us-east-1 DNS, it will resolve to the
-only available DNS.
+Once the `pacman` replica set reflects the changes, open up your browser and try to access it
+using the top-level DNS [http://pacman.default.federation.svc.example.com/](http://pacman.default.federation.svc.example.com/).
+Make sure to replace `example.com` with your DNS name. If you try to access the old us-east-1 DNS, it will resolve to the
+only available `pacman` DNS, us-west. Note that you may experience a delay in DNS updates and you may need to clear your DNS cache.
 
 You can also see all the DNS entries that were updated in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+
+#### Check DNS Updates
+
+You can see all the DNS entries that were created in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+
+You can also query them from the command line:
+
+```bash
+gcloud dns record-sets list --zone federation --filter='name ~ mongo OR name ~ pacman'
+```
+
+Note: You may experience delays in DNS updates and you may need to clear your DNS cache from your client in order to see the updates.
 
 #### Play Migrated Pac-Man
 
@@ -506,13 +368,13 @@ in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/use
 Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete svc pacman
 done
 ```
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete rs pacman
 done
 ```
@@ -534,13 +396,13 @@ in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/use
 Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete svc mongo
 done
 ```
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete rs mongo
 done
 ```
@@ -548,7 +410,7 @@ done
 ##### Delete MongoDB Persistent Volume Claims
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} \
     delete -f persistentvolumeclaim/mongo-pvc.yaml
 done
@@ -557,7 +419,7 @@ done
 ##### Delete MongoDB Storage Class
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete storageclass slow
 done
 ```
