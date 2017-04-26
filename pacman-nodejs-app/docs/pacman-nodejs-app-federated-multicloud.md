@@ -63,7 +63,7 @@ kubectl config get-contexts --output=name
 Determine which are the contexts in your federation and assign them to a variable:
 
 ```bash
-export KUBE_FED_CONTEXTS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 az-us-central us-east-1.subdomain.example.com"
+export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 az-us-central us-east-1.subdomain.example.com"
 ```
 
 ## Create MongoDB Resources
@@ -99,7 +99,7 @@ kubectl --context=us-east-1.subdomain.example.com \
 Now that we have the storage class created in each cluster we'll create the PVC:
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} \
         create -f persistentvolumeclaim/mongo-pvc.yaml
 done
@@ -108,7 +108,7 @@ done
 Verify the PVCs are bound in each cluster:
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} \
         get pvc mongo-storage
 done
@@ -300,13 +300,13 @@ in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/use
 Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete svc pacman
 done
 ```
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete rs pacman
 done
 ```
@@ -327,13 +327,13 @@ in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/use
 Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete svc mongo
 done
 ```
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete rs mongo
 done
 ```
@@ -341,7 +341,7 @@ done
 ##### Delete MongoDB Persistent Volume Claims
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} \
     delete -f persistentvolumeclaim/mongo-pvc.yaml
 done
@@ -350,7 +350,7 @@ done
 ##### Delete MongoDB Storage Class
 
 ```bash
-for i in ${KUBE_FED_CONTEXTS}; do
+for i in ${KUBE_FED_CLUSTERS}; do
     kubectl --context=${i} delete storageclass slow
 done
 ```
