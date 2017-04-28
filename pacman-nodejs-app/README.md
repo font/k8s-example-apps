@@ -114,5 +114,5 @@ Follow the instructions in the below links to test out different federation scen
 - Remove Kubernetes cluster from Federation and scale application to remaining clusters.
 - Destroy Kubernetes cluster and watch application scale to remaining clusters.
 - [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)
-- [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-migration.md)
+- [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-portability.md)
 - [Pac-Man application deployed on AWS federation, then scaled to GKE, then migrated to GKE](docs/pacman-nodejs-app-federated-aws-gke-scale-migrate.md)
