@@ -1,8 +1,8 @@
 # Pac-Man Application On Federated Kubernetes Cluster With Public Cloud Provider Migration
 
 This guide will walk you through creating multiple Kubernetes clusters spanning multiple public cloud providers
-and use a federation control plane to deploy the Pac-Man Node.js application onto one cluster (AWS), then migrate it to another cluster
-running on a different public cloud provider (GCP).
+and use a federation control plane to deploy the Pac-Man Node.js application onto AWS and GKE clusters, then move it just
+to GKE.
 
 ## High-Level Architecture
 
@@ -57,18 +57,12 @@ Using the list of contexts for `kubectl`:
 
 ```bash
 kubectl config get-contexts --output=name
-kubectl config use-context federation
-kubectl get clusters
-export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
-echo $GCP_PROJECT
 ```
 
 Determine which are the contexts in your federation that you want to deploy to and assign them to a variable:
 
 ```bash
 export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 us-east-1.subdomain.example.com"
-git clone https://github.com/font/k8s-example-apps.git
-cd k8s-example-apps/pacman-nodejs-app
 ```
 
 ## Create MongoDB Resources
@@ -170,18 +164,18 @@ apt-get -y install dnsutils
 Then use either `dig` or `nslookup` to perform the following lookups for each zone:
 
 ```bash
-dig mongo.default.federation.svc.us-west1.example.com +noall +answer
-nslookup mongo.default.federation.svc.us-west1.example.com
+dig mongo.default.federation.svc.us-west1.federation.com +noall +answer
+nslookup mongo.default.federation.svc.us-west1.federation.com
 
-dig mongo.default.federation.svc.us-east-1.example.com +noall +answer
-nslookup mongo.default.federation.svc.us-east-1.example.com
+dig mongo.default.federation.svc.us-east-1.federation.com +noall +answer
+nslookup mongo.default.federation.svc.us-east-1.federation.com
 ```
 
 Or check to make sure the load balancer DNS A record contains an IP address for each zone:
 
 ```bash
-dig mongo.default.federation.svc.example.com +noall +answer
-nslookup mongo.default.federation.svc.example.com
+dig mongo.default.federation.svc.federation.com +noall +answer
+nslookup mongo.default.federation.svc.federation.com
 ```
 
 Once the DNS entries are resolvable, launch the `mongo` CLI:
@@ -191,7 +185,7 @@ mongo
 ```
 
 Now we'll create an initial configuration specifying the one mongo in our replication set. In our example,
-we'll use the GKE west and AWS east instances. Make sure to replace `example.com` with the DNS zone name you created.
+we'll use the GKE west and AWS east instances. Make sure to replace `federation.com` with the DNS zone name you created.
 
 ```
 initcfg = {
@@ -199,11 +193,11 @@ initcfg = {
         "members" : [
                 {
                         "_id" : 0,
-                        "host" : "mongo.default.federation.svc.us-west1.example.com:27017"
+                        "host" : "mongo.default.federation.svc.us-west1.federation.com:27017"
                 },
                 {
                         "_id" : 1,
-                        "host" : "mongo.default.federation.svc.us-east-1.example.com:27017"
+                        "host" : "mongo.default.federation.svc.us-east-1.federation.com:27017"
                 }
         ]
 }
@@ -260,8 +254,8 @@ kubectl get rs pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for the replica, open up your browser and try to access it via its
-DNS e.g. [http://pacman.default.federation.svc.example.com/](http://pacman.default.federation.svc.example.com/).
-Make sure to replace `example.com` with your DNS name.
+DNS e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/).
+Make sure to replace `federation.com` with your DNS name.
 
 #### Check DNS Updates
 
@@ -278,8 +272,8 @@ Note: You may experience delays in DNS updates and you may need to clear your DN
 ## Play Pac-Man
 
 Go ahead and play a few rounds of Pac-Man and invite your friends and colleagues by giving them your FQDN to your Pac-Man application
-e.g. [http://pacman.default.federation.svc.example.com/](http://pacman.default.federation.svc.example.com/)
-(replace `example.com` with your DNS name).
+e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/)
+(replace `federation.com` with your DNS name).
 
 The DNS will load balance and resolve to any of the available zones in your federated kubernetes cluster. This is represented by the `Cloud:` and `Zone:`
 fields at the top, as well as the `Host:` Pod that it's running on. When you save your score, it will automatically save these fields corresponding
@@ -292,6 +286,27 @@ See who can get the highest score!
 Once you've played Pac-Man to verify your application has been properly deployed, we'll migrate the application to the GKE Kubernetes cluster only.
 
 #### Migrate the MongoDB Resources
+
+###### Remove AWS MongoDB Replica from Replica Set
+
+Remove the instance by logging into `PRIMARY` `mongo` CLI:
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 exec -it ${MONGO_POD} -- bash
+mongo
+```
+
+then executing:
+
+```
+rs.remove("mongo.default.federation.svc.us-east-1.federation.com:27017")
+```
+
+Check the status until this instance remains the only instance as `PRIMARY`:
+
+```
+rs.status()
+```
 
 ###### Migrate MongoDB Kubernetes Replica Set
 
@@ -316,21 +331,20 @@ We'll need to migrate the Pac-Man game to the us-west cluster.
 
 ```
 cat replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
-kubectl apply -f replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
+kubectl create -f replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
 ```
 
-Wait until the replica set status is ready and reflects the changes:
+You can check the `pacman` replica set status but keep in mind we're still keeping 2 replicas:
 
 ```
 kubectl get rs pacman -o wide --watch
+for c in ${KUBE_FED_CLUSTERS}; do echo; echo -----${c}-----; echo; kubectl --context=${c} get pods; echo; done
 ```
 
 Once the `pacman` replica set reflects the changes, open up your browser and try to access it
-using the top-level DNS [http://pacman.default.federation.svc.example.com/](http://pacman.default.federation.svc.example.com/).
-Make sure to replace `example.com` with your DNS name. If you try to access the old us-east-1 DNS, it will resolve to the
+using the top-level DNS [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/).
+Make sure to replace `federation.com` with your DNS name. If you try to access the old us-east-1 DNS, it will resolve to the
 only available `pacman` DNS, us-west. Note that you may experience a delay in DNS updates and you may need to clear your DNS cache.
-
-You can also see all the DNS entries that were updated in your [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
 
 #### Check DNS Updates
 
