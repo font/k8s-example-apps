@@ -59,7 +59,7 @@ federation. For example, using the GKE host cluster in the us-west region, an Az
 in the us-east region with their corresponding context names:
 
 ```bash
-JOIN_CLUSTERS="${HOST_CLUSTER} az-us-central us-east-1.subdomain.example.com"
+JOIN_CLUSTERS="${HOST_CLUSTER} az-us-central1 us-east-1.subdomain.example.com"
 ```
 
 ## Initialize the Federated Control Plane
@@ -115,7 +115,7 @@ kubefed join gce-us-west1 \
 ```bash
 kubefed join az-us-central1 \
     --host-cluster-context=${HOST_CLUSTER} \
-    --cluster-context=az-us-central
+    --cluster-context=az-us-central1
 ```
 
 ##### aws-us-east1
