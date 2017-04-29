@@ -255,7 +255,7 @@ kubectl get svc pacman -o wide --watch
 We'll need to create the Pac-Man game replica set to access the application on port 80.
 
 ```bash
-kubectl create -f replicasets/pacman-replicaset.yaml
+kubectl create -f replicasets/pacman-replicaset-us-multicloud.yaml
 ```
 
 Wait until the replica set status is ready for all replicas:
@@ -291,7 +291,7 @@ See who can get the highest score!
 Delete Pac-Man replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
 
 ```bash
-kubectl delete -f replicasets/pacman-replicaset.yaml -f services/pacman-service.yaml
+kubectl delete -f replicasets/pacman-replicaset-us-multicloud.yaml -f services/pacman-service.yaml
 ```
 
 If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
