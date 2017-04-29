@@ -12,17 +12,17 @@ You will need an [Azure account](https://azure.microsoft.com/en-us/free/) before
 #### Increase Quota
 
 Make sure you increase your quota for the correct SKU in the specific region you will be creating your Kubernetes cluster.
-For this example, we will be using the South Central US region and the default Azure Container Service SKU `Standard_D2_v2`.
+For this example, we will be using the West Central US region and the default Azure Container Service SKU `Standard_D2_v2`.
 We will also be using the default master and agent node count of 1 and 3, respectively, for a total of 4 nodes.
 
-You can check your current quota limit for the `Standard_D2_v2` SKU in the South Central US
+You can check your current quota limit for the `Standard_D2_v2` SKU in the West Central US
 location (what we'll use in our example below) using:
 
 ```
-az vm list-usage --location "South Central US" --query "[?name.value=='standardDv2Family']"
+az vm list-usage --location "West Central US" --query "[?name.value=='standardDv2Family']"
 ```
 
-If you do not have sufficient quota for the Dv2 Series of SKUs in the South Central US region, you will receive
+If you do not have sufficient quota for the Dv2 Series of SKUs in the West Central US region, you will receive
 a `QuotaExceeded` error. You can read more about this error on
 [Azure's Resource Management Common Deployment Errors](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-common-deployment-errors#quotaexceeded).
 If you are using the free trial of Azure, or do not have at least 8 CPU cores available (2 CPU cores per node * 4 nodes), then
@@ -63,11 +63,11 @@ There are two ways to create a Kubernetes cluster using Azure's Container Servic
 #### Create Resource Group
 
 Before you can create a cluster regardless of the options above, you need to create a resource group in a specific geo location if you don't already have one.
-Run these example commands to use the South Central US region while specifying whatever name you'd like for the `RESOURCE_GROUP`.
+Run these example commands to use the West Central US region while specifying whatever name you'd like for the `RESOURCE_GROUP`.
 
 ```
 RESOURCE_GROUP=my-resource-group
-LOCATION=southcentralus
+LOCATION=westcentralus
 az group create --name=${RESOURCE_GROUP} --location=${LOCATION}
 ```
 
@@ -89,8 +89,8 @@ NOTE: This command also automatically generates the
 that a Kubernetes cluster in Azure uses and will generate SSH public and private key pairs if you don't already have them.
 
 ```
-DNS_PREFIX=az-us-central
-CLUSTER_NAME=az-us-central
+DNS_PREFIX=az-us-central1
+CLUSTER_NAME=az-us-central1
 az acs create --orchestrator-type=kubernetes \
     --resource-group ${RESOURCE_GROUP} \
     --name=${CLUSTER_NAME} \
@@ -192,7 +192,7 @@ build `acs-engine` locally from source you have already downloaded the repo sour
 
 In the `kubernetes.json` file, you'll need to add a few things:
 
-1. Change the `dnsPrefix` value to something unique such as `az-us-central` since we'll be building a cluster in the central region.
+1. Change the `dnsPrefix` value to something unique such as `az-us-central1` since we'll be building a cluster in the central region.
 2. Add the contents of your SSH `id_rsa.pub` public key to the value of the `keyData` field.
 3. Add the `appId` from the Service Principal account you created above to the `servicePrincipalClientID` value.
 4. Add the `password` from the Service Principal account you created above to the `servicePrincipalClientSecret` value.
@@ -236,7 +236,7 @@ You're now ready to deploy your Kubernetes cluster. Execute the following exampl
 **Make sure to include the '@' in the `--parameters` option**
 
 ```
-az group deployment create --name "az-us-central" \
+az group deployment create --name "az-us-central1" \
     --resource-group "${RESOURCE_GROUP}" \
     --template-file "./_output/<INSTANCE>/azuredeploy.json" \
     --parameters "@./_output/<INSTANCE>/azuredeploy.parameters.json" \

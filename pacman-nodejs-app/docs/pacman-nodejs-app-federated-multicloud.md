@@ -49,7 +49,7 @@ Follow these steps:
 3. [Create Google DNS managed zone for cluster](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone)
 4. [Download and install kubefed and kubectl](kubernetes-cluster-gke-federation.md#download-and-install-kubefed-and-kubectl)
 5. [Create and verify 1 AWS Kubernetes cluster in 1 region i.e. us-east](kubernetes-cluster-aws.md)
-6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e. southcentralus](kubernetes-cluster-azure.md)
+6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e. westcentralus](kubernetes-cluster-azure.md)
 7. [Using `kubefed` set up a Kubernetes federation containing each of these clusters: GKE, AWS, and Azure.](kubernetes-cluster-federation.md)
 
 #### Export the Cluster Contexts
@@ -63,7 +63,7 @@ kubectl config get-contexts --output=name
 Determine which are the contexts in your federation and assign them to a variable:
 
 ```bash
-export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 az-us-central us-east-1.subdomain.example.com"
+export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 az-us-central1 us-east-1.subdomain.example.com"
 ```
 
 ## Create MongoDB Resources
@@ -83,7 +83,7 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 ##### Azure Persistent Disk
 
 ```bash
-kubectl --context=az-us-central \
+kubectl --context=az-us-central1 \
     create -f storageclass/azure-storageclass.yaml
 ```
 
@@ -173,8 +173,8 @@ Then use either `dig` or `nslookup` to perform one of the following lookups for 
 dig mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME> +noall +answer
 nslookup mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME>
 
-dig mongo.default.federation.svc.southcentralus.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.default.federation.svc.southcentralus.<DNS_ZONE_NAME>
+dig mongo.default.federation.svc.westcentralus.<DNS_ZONE_NAME> +noall +answer
+nslookup mongo.default.federation.svc.westcentralus.<DNS_ZONE_NAME>
 
 dig mongo.default.federation.svc.us-east-1.<DNS_ZONE_NAME> +noall +answer
 nslookup mongo.default.federation.svc.us-east-1.<DNS_ZONE_NAME>
@@ -206,7 +206,7 @@ initcfg = {
                 },
                 {
                         "_id" : 1,
-                        "host" : "mongo.default.federation.svc.southcentralus.federation.com:27017"
+                        "host" : "mongo.default.federation.svc.westcentralus.federation.com:27017"
                 },
                 {
                         "_id" : 2,
