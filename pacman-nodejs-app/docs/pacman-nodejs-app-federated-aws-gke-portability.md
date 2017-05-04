@@ -1,4 +1,4 @@
-# Pac-Man Application On Federated Kubernetes Cluster With Public Cloud Provider Migration
+# Pac-Man Application On Federated Kubernetes Cluster With Public Cloud Provider Portability
 
 This guide will walk you through creating multiple Kubernetes clusters spanning multiple public cloud providers
 and use a federation control plane to deploy the Pac-Man Node.js application onto AWS and GKE clusters, then move it just
@@ -8,7 +8,7 @@ to GKE.
 
 Below is a diagram demonstrating the architecture of the game across the federated kubernetes cluster after all the steps are completed.
 
-![Pac-Man Game Architecture](images/Kubernetes-Federation-Game-AWS-GKE-Migration.png)
+![Pac-Man Game Architecture](images/Kubernetes-Federation-Game-AWS-GKE-Portability.png)
 
 ## Prerequisites
 
