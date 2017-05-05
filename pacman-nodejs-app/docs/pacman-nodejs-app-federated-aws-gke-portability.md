@@ -455,4 +455,4 @@ Follow these guides to cleanup the clusters:
 
 Here is a video demonstrating the above scenario starting at the point where the Pac-Man application is already deployed on GKE and AWS.
 
-[![Pac-Man Game Video Demonstration](https://youtu.be/_-08cBlW8T4/0.jpg)](https://youtu.be/_-08cBlW8T4)
+[![Pac-Man Game Video Demonstration](https://img.youtube.com/vi/_-08cBlW8T4/0.jpg)](https://www.youtube.com/watch?v=_-08cBlW8T4)
