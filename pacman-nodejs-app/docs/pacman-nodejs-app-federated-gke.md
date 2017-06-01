@@ -25,17 +25,10 @@ Follow these steps to [push the Pac-Man container image to your Google Cloud Con
 
 #### Create the Kubernetes Clusters
 
-We have a couple options to walk you through each of the steps to create a federated Kubernetes cluster here. You can perform one of the following:
-
-1. Create the federated cluster manually by following the steps in my
-   [slightly modified version](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.3) of Kelsey Hightower's
-   Federated Kubernetes tutorial. It uses Kubernetes version 1.5.3 and you only need about 3 clusters e.g. west, central, and
-   east so you can ignore any of the other regions. Also, it includes steps on adding the federation config map for kube-dns to
-   consume as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
-2. Create 3 GKE Kubernetes clusters in 3 regions e.g. us-west, us-central, and us-east.
-   Then use [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) to initialize and join your
-   clusters together followed by steps on adding the federation config map for kube-dns as described [here](https://kubernetes.io/docs/admin/federation/#updating-kubedns).
-   [Follow these steps to get set up using this method](kubernetes-cluster-gke-federation.md).
+Create 3 GKE Kubernetes clusters in 3 regions e.g. us-west, us-central, and us-east.
+Then use [kubefed](https://kubernetes.io/docs/admin/federation/kubefed/) to initialize
+and join your clusters together.
+[Follow these steps to get set up using this method](kubernetes-cluster-gke-federation.md).
 
 #### Store the GCP Project Name
 
@@ -53,21 +46,9 @@ export GCE_ZONES="west central east"
 
 ## Create MongoDB Resources
 
-#### Create MongoDB Storage Class
-
-We need to create persistent volume claims for our MongoDB to persist the database. For this we'll deploy a Storage Class to
-utilize GCE Persistent Disks.
-
-```
-for i in ${GCE_ZONES}; do \
-    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    create -f storageclass/gce-storageclass.yaml; \
-done
-```
-
 #### Create MongoDB Persistent Volume Claims
 
-Now that we have the storage class created in each cluster we'll create the PVC:
+Create the PVC:
 
 ```
 for i in ${GCE_ZONES}; do \
@@ -101,20 +82,26 @@ Wait until the mongo service has all the external IP addresses listed:
 kubectl get svc mongo -o wide --watch
 ```
 
-#### Create MongoDB Kubernetes Replica Set
+#### Create MongoDB Kubernetes Deployment
 
-Now create the  MongoDB Replica Set that will use the `mongo-storage` persistent volume claim to mount the
+Now create the MongoDB Deployment that will use the `mongo-storage` persistent volume claim to mount the
 directory that is to contain the MongoDB database files. In addition, we will pass the `--replSet rs0` parameter
 to `mongod` in order to create a MongoDB replica set.
 
 ```
-kubectl create -f replicasets/mongo-replicaset-pvc-rs0.yaml
+kubectl create -f deployments/mongo-deployment-rs.yaml
 ```
 
-Wait until the mongo replica set status is ready:
+Scale the mongo deployment
 
 ```
-kubectl get rs mongo -o wide --watch
+kubectl scale deploy/mongo --replicas=3
+```
+
+Wait until the mongo deployment shows 3 pods available
+
+```
+kubectl get deploy mongo -o wide --watch
 ```
 
 #### Create the MongoDB Replication Set
@@ -214,18 +201,24 @@ Wait and verify the service has all the external IP addresses listed:
 kubectl get svc pacman -o wide --watch
 ```
 
-#### Create the Pac-Man Replica Set
+#### Create the Pac-Man Deployment
 
-We'll need to create the Pac-Man game replica set to access the application on port 80.
-
-```
-kubectl create -f replicasets/pacman-replicaset.yaml
-```
-
-Wait until the replica set status is ready for all replicas:
+We'll need to create the Pac-Man game deployment to access the application on port 80.
 
 ```
-kubectl get rs pacman -o wide --watch
+kubectl create -f deployments/pacman-deployment-rs.yaml
+```
+
+Scale the pacman deployment
+
+```
+kubectl scale deploy/pacman --replicas=3
+```
+
+Wait until the pacman deployment shows 3 pods available
+
+```
+kubectl get deploy pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for each replica, open up your browser and try to access it via its
@@ -247,72 +240,29 @@ See who can get the highest score!
 
 #### Delete Pac-Man Resources
 
-##### Delete Pac-Man Replica Set and Service
+##### Delete Pac-Man Deployment and Service
 
-Delete Pac-Man replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
-
-```
-kubectl delete -f replicasets/pacman-replicaset.yaml -f services/pacman-service.yaml
-```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
+Delete Pac-Man deployment and service. Seeing the deployment removed from the federation context may take up to a couple minutes.
 
 ```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete svc pacman; \
-done
-```
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete rs pacman; \
-done
+kubectl delete deploy/pacman svc/pacman
 ```
 
 #### Delete MongoDB Resources
 
-##### Delete MongoDB Replica Set and Service
+##### Delete MongoDB Deployment and Service
 
-Delete MongoDB replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
-
-```
-kubectl delete -f replicasets/mongo-replicaset-pvc-rs0.yaml -f services/mongo-service.yaml
-```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
+Delete MongoDB deployment and service. Seeing the deployment removed from the federation context may take up to a couple minutes.
 
 ```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete svc mongo; \
-done
-```
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete rs mongo; \
-done
+kubectl delete deploy/mongo svc/mongo
 ```
 
 ##### Delete MongoDB Persistent Volume Claims
 
 ```
 for i in ${GCE_ZONES}; do \
-    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete -f persistentvolumeclaim/mongo-pvc.yaml; \
-done
-```
-
-##### Delete MongoDB Storage Class
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete -f storageclass/gce-storageclass.yaml; \
+    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 delete pvc/mongo-storage; \
 done
 ```
 
@@ -322,7 +272,4 @@ Delete the `mongo` and `pacman` DNS entries that were created in your [Google DN
 
 #### Cleanup rest of federation cluster
 
-Follow either of these two guides depending on which setup you followed above:
-
-1. [Steps to clean-up your manually created federation cluster](https://github.com/font/kubernetes-cluster-federation/tree/v1.5.3#cleaning-up).
-2. [Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-gke-federation.md#cleanup).
+[Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-gke-federation.md#cleanup).

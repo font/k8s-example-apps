@@ -90,7 +90,7 @@ Create the cluster configuration using the example command below. This only crea
 ```
 kops create cluster --name ${AWS_CLUSTER_NAME} \
     --zones us-east-1a \
-    --kubernetes-version 1.5.6
+    --kubernetes-version 1.6.4
 ```
 
 There are several other options you can specify e.g. `--node-count`, `--node-size`, `--master-size`, etc.

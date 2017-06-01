@@ -14,47 +14,61 @@ Using the command below we'll create a cluster:
 
 ```
 gcloud container --project "<YOUR_PROJECT_ID>" \
-clusters create "kube-ref-app" --zone "us-central1-f" \
---machine-type "n1-standard-2" --num-nodes "3" --network "default"
+  clusters create "kube-ref-app" --zone "us-central1-f" \
+  --machine-type "n1-standard-2" --num-nodes "3" --network "default"
 ```
 
 Once the cluster has been created, you'll want to log into the cluster:
 
 ```
-gcloud container clusters get-credentials kube-ref-app
-```
-
-## Creating the MongoDB Service
-
-### Create a persistent disk to store the data
-
-This allows us to not lose our data as pods come and go. To create the disk, run:
-
-```
-gcloud compute disks create \
+gcloud container clusters \
   --project "<YOUR_PROJECT_ID>" \
   --zone "us-central1-f" \
-  --size 200GB \
-  mongo-disk
+  get-credentials kube-ref-app
 ```
 
-Be sure to use your project's ID and the zone that you selected for your cluster.
+## Create MongoDB Resources
 
-### Create MongoDB replication controller
+#### Create MongoDB Persistent Volume Claim
 
-Now create the  MongoDB replication controller that will use the `gcePersistentDisk` volume plugin to mount
-the `mongo-disk` we just created:
+We need to create persistent volume claim for our MongoDB to persist the database.
 
 ```
-kubectl create -f controllers/mongo-controller.yaml
+kubectl create -f persistentvolumeclaim/mongo-pvc.yaml
 ```
 
-### Create the MongoDB service
+Wait until the pvc is bound:
+
+```
+kubectl get pvc mongo-storage -o wide --watch
+```
+
+#### Create MongoDB Service
 
 This component creates a mongo DNS entry, so this is why we use `mongo` as the host we connect to in our application instead of `localhost`.
 
 ```
 kubectl create -f services/mongo-service.yaml
+```
+
+Wait until the mongo service has the external IP address listed:
+
+```
+kubectl get svc mongo -o wide --watch
+```
+
+#### Create MongoDB Deployment
+
+Now create the  MongoDB deployment that will use the `mongo-storage` persistent volume claim to mount the directory that is to contain the MongoDB database files.
+
+```
+kubectl create -f deployments/mongo-deployment.yaml
+```
+
+Scale the deployment, since the deployment definition has replicas set to 0:
+
+```
+kubectl scale deploy/mongo --replicas=1
 ```
 
 Verify the container has been created and is in the running state:
@@ -63,25 +77,51 @@ Verify the container has been created and is in the running state:
 kubectl get pods -o wide --watch
 ```
 
-## Creating the Web Application Server
+## Creating the Pac-Man Resources
 
-We'll need to create the web server replication controller, this time with 2 replicas, and the service to access the application on port 80.
+#### Create Pac-Man Service
+
+This component creates the service to access the application.
 
 ```
-kubectl create -f controllers/web-controller.yaml
-kubectl create -f services/web-service.yaml
+kubectl create -f services/pacman-service.yaml
 ```
 
-Wait until their status is running:
+Wait until the pacman service has the external IP address listed:
+
+```
+kubectl get svc pacman -o wide --watch
+```
+
+#### Create Pac-Man Deployment
+
+Now create the Pac-Man deployment.
+
+```
+kubectl create -f deployments/pacman-deployment.yaml
+```
+
+Scale the deployment, since the deployment definition has replicas set to 0.
+
+```
+kubectl scale deploy/pacman --replicas=2
+```
+
+Verify the containers have been created and are in the running state:
 
 ```
 kubectl get pods -o wide --watch
 ```
 
-Also verify the service has an external IP:
+Once the pacman pods are running and the `pacman` service has an IP address, open up your browser and try to access it via `http://<EXTERNAL_IP>/`.
+
+## Cleanup
+
+#### Delete Kubernetes cluster
+
+Delete the GKE cluster.
 
 ```
-kubectl get svc -o wide
+gcloud container --project "<YOUR_PROJECT_ID>" \
+  clusters delete "kube-ref-app" --zone "us-central1-f"
 ```
-
-Once the `web` service has an IP address, open up your browser and try to access it via `http://<EXTERNAL_IP>/`.

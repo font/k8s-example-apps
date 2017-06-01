@@ -93,7 +93,7 @@ Once you've pushed your image, you'll need to update the Kubernetes resources to
 with the rest of the guides.
 
 ```
-sed -i 's/ifontlabs/YOUR_PROJECT_ID/' controllers/web-controller.yaml replicasets/pacman-replicaset*.yaml
+sed -i 's/ifontlabs/YOUR_PROJECT_ID/' deployments/pacman-deployment*.yaml
 ```
 
 ## Set Up Kubernetes Cluster(s)

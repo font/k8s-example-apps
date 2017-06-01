@@ -1,11 +1,11 @@
 apiVersion: extensions/v1beta1
-kind: ReplicaSet
+kind: Deployment
 metadata:
   labels:
     name: mongo
   name: mongo
 spec:
-  replicas: 3
+  replicas: 0
   template:
     metadata:
       labels:
@@ -17,7 +17,9 @@ spec:
         ports:
         - name: mongo
           containerPort: 27017
-          hostPort: 27017
+        args:
+        - --replSet
+        - rs0
         volumeMounts:
           - name: mongo-db
             mountPath: /data/db
