@@ -221,11 +221,11 @@ You can now modify any of the parameters in the `azuredeploy.json` and `azuredep
 Specifically, you can modify the version of Kubernetes used. For this you'll want to edit the `kubernetesHyperkubeSpec` value field in the
 `_output/Kubernetes-UNIQUEID/azuredeploy.parameters.json` config file to contain a link to the version of Kubernetes you want to use.
 This can be any custom version of Kubernetes, or an official release. For example, to use
-an official release of Kubernetes 1.5.6, modify the field to contain:
+an official release of Kubernetes 1.6.4, modify the field to contain:
 
 ```
   "kubernetesHyperkubeSpec": {
-    "value": "gcrio.azureedge.net/google_containers/hyperkube-amd64:v1.5.6"
+    "value": "gcrio.azureedge.net/google_containers/hyperkube-amd64:v1.6.4"
   },
 ```
 

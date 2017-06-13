@@ -14,8 +14,18 @@ Run each command separately to build the clusters in parallel.
 
 If you're looking to deploy a specific version of Kubernetes other than the current default supported by Google Cloud Platform,
 GCP supports the `--cluster-version` option as part of the `gcloud container clusters create` command.
-For example, if you'd like to deploy Kubernetes version 1.6.1, then pass in `--cluster-version=1.6.1`. See
+For example, if you'd like to deploy Kubernetes version 1.6.4, then pass in `--cluster-version=1.6.4`. See
 [Google's Container Engine Release Notes](https://cloud.google.com/container-engine/release-notes) for supported versions of Kubernetes.
+
+
+#### Configure gcloud to use client certificate
+
+To avoid issues with RBAC permissions, configure gcloud to use client certificates:
+
+```
+gcloud config set container/use_client_certificate True
+export CLOUDSDK_CONTAINER_USE_CLIENT_CERTIFICATE=True
+```
 
 #### gce-us-west1
 
@@ -76,7 +86,7 @@ gcloud dns managed-zones create federation \
 Replace the version string with whatever version you want in the `curl` command below.
 
 ```
-curl -O https://storage.googleapis.com/kubernetes-release/release/v1.5.6/kubernetes-client-linux-amd64.tar.gz
+curl -O https://storage.googleapis.com/kubernetes-release/release/v1.6.4/kubernetes-client-linux-amd64.tar.gz
 tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubefed
 tar -xzvf kubernetes-client-linux-amd64.tar.gz kubernetes/client/bin/kubectl
 sudo cp kubernetes/client/bin/kubefed /usr/local/bin
@@ -102,15 +112,15 @@ Replace the `--dns-zone-name` parameter to match the DNS zone name you just used
 **Be sure to include the trailing `.` in the DNS zone name**.
 
 `kubefed init` will set some defaults if you do not override them on the command line.
-For example, `--dns-provider='google-clouddns'` is set by default in Kubernetes versions <= 1.5. However, starting with `kubefed` version
-1.6, this argument is mandatory. Additionally, you can pass `--image='gcr.io/google_containers/hyperkube-amd64:v1.5.6'`
-to specify a different version of the federation API server and controller manager. By default, the image version it pulls will
-match the version of `kubefed` you are using i.e. `v1.5.6` in this case.
+For example, you can pass `--image='gcr.io/google_containers/hyperkube-amd64:v1.6.4'`
+to specify a different version of the federation API server and controller manager.
+By default, the image version it pulls will match the version of `kubefed` you are
+using i.e. `v1.6.4` in this case.
 
 ```
 kubefed init federation \
     --host-cluster-context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
-    --dns-zone-name=federation.com.
+    --dns-provider='google-clouddns' --dns-zone-name=federation.com.
 ```
 
 Once the command completes, you will have a federated API server and controller-manager running in the us-west zone, in addition
@@ -160,66 +170,15 @@ kubefed join gce-us-east1 \
 kubectl get clusters -w
 ```
 
-## Update KubeDNS
-
-Lastly, now that the federated cluster is up and ready, we need to update kube-dns in each cluster to specify the federation domain name.
-Unfortunately, this is a manual step that `kubefed` does not do for you yet unless you're using Kubernetes 1.6 release. See Kubernetes issue #38400
-and PR #39338 for more details.
-
-To update the kube-dns we will add a config map to the kube-dns namespace in each cluster specifying the federation domain name.
-
-#### Replace federation zone name
-
-Before running the below command make sure to replace `federation.com` with the zone name you specified when creating the Google
-DNS Managed Zone above.
+Verify that the default namespace exists in the federation
 
 ```
-sed 's/federation.com/YOUR_ZONE_NAME/' configmap/federation-cm.yaml > tmp \
-    && mv -f tmp configmap/federation-cm.yaml
+kubectl get namespaces
 ```
 
-#### Create the Config Map
-
-##### gce-us-west1
-
+If it is missing, create it:
 ```
-kubectl --context="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1" \
-  --namespace=kube-system \
-  create -f configmap/federation-cm.yaml
-```
-
-```
-kubectl --context="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1" \
-  --namespace=kube-system \
-  get configmap kube-dns -o yaml
-```
-
-##### gce-us-central1
-
-```
-kubectl --context="gke_${GCP_PROJECT}_us-central1-b_gce-us-central1" \
-  --namespace=kube-system \
-  create -f configmap/federation-cm.yaml
-```
-
-```
-kubectl --context="gke_${GCP_PROJECT}_us-central1-b_gce-us-central1" \
-  --namespace=kube-system \
-  get configmap kube-dns -o yaml
-```
-
-##### gce-us-east1
-
-```
-kubectl --context="gke_${GCP_PROJECT}_us-east1-b_gce-us-east1" \
-  --namespace=kube-system \
-  create -f configmap/federation-cm.yaml
-```
-
-```
-kubectl --context="gke_${GCP_PROJECT}_us-east1-b_gce-us-east1" \
-  --namespace=kube-system \
-  get configmap kube-dns -o yaml
+kubectl create -f namespaces/default.yaml
 ```
 
 You should now have a working federated Kubernetes cluster spanning the west, central, and east zones.

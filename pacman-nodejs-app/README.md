@@ -38,7 +38,7 @@ The [Dockerfile](docker/Dockerfile) performs the following steps:
 1. It is based on Node.js LTS Version 6 (Boron).
 2. It then clones the Pac-Man game into the configured application directory.
 4. Replaces the host 'localhost' with 'mongo' in the Node.js MongoDB backend API to match the host DNS given to the MongoDB Kubernetes service.
-5. Exposes port 80 for the web server.
+5. Exposes port 8080 for the web server.
 6. Starts the Node.js application using `npm start`.
 
 To build the image run:
@@ -52,7 +52,7 @@ cd ..
 You can test the image by running:
 
 ```
-docker run -p 8000:80 <user>/pacman-nodejs-app
+docker run -p 8000:8080 <user>/pacman-nodejs-app
 ```
 
 And going to `http://localhost:8000/` to see if you get the Pac-Man game.
@@ -93,7 +93,7 @@ Once you've pushed your image, you'll need to update the Kubernetes resources to
 with the rest of the guides.
 
 ```
-sed -i 's/ifontlabs/YOUR_PROJECT_ID/' controllers/web-controller.yaml replicasets/pacman-replicaset*.yaml
+sed -i 's/ifontlabs/YOUR_PROJECT_ID/' deployments/pacman-deployment*.yaml
 ```
 
 ## Set Up Kubernetes Cluster(s)

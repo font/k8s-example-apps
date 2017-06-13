@@ -1,20 +1,19 @@
 apiVersion: extensions/v1beta1
-kind: ReplicaSet
+kind: Deployment
 metadata:
   labels:
     name: pacman
   name: pacman
 spec:
-  replicas: 3
+  replicas: 0
   template:
     metadata:
       labels:
         name: pacman
     spec:
       containers:
-      - image: gcr.io/ifontlabs/pacman-nodejs-app:latest
+      - image: detiber/pacman:latest
         name: pacman
-        imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 8080
           name: http-server

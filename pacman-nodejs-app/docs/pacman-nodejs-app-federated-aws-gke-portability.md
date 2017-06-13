@@ -67,25 +67,6 @@ export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 us-east-1.s
 
 ## Create MongoDB Resources
 
-#### Create MongoDB Storage Class
-
-We need to create persistent volume claims for our MongoDB to persist the database. For this we'll deploy the corresponding Storage Class to
-utilize GCE Persistent Disks and AWS Elastic Block Store.
-
-#### GCE Persistent Disk
-
-```bash
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
-    create -f storageclass/gce-storageclass.yaml
-```
-
-##### AWS Elastic Block Store
-
-```bash
-kubectl --context=us-east-1.subdomain.example.com \
-    create -f storageclass/ebs-storageclass.yaml
-```
-
 #### Create MongoDB Persistent Volume Claims
 
 Now that we have the storage class created in each cluster we'll create the PVC:
@@ -123,21 +104,26 @@ Wait until the mongo service has all the external IP addresses (dynamic DNS for 
 kubectl get svc mongo -o wide --watch
 ```
 
-#### Create MongoDB Kubernetes Replica Set
+#### Create MongoDB Kubernetes Deployment
 
-Now create the  MongoDB Replica Set that will use the `mongo-storage` persistent volume claim to mount the
+Now create the MongoDB Deployment that will use the `mongo-storage` persistent volume claim to mount the
 directory that is to contain the MongoDB database files. In addition, we will pass the `--replSet rs0` parameter
 to `mongod` in order to create a MongoDB replica set.
 
-```bash
-cat replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-1.yaml
-kubectl create -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-1.yaml
+```
+kubectl create -f deployments/mongo-deployment-rs.yaml
 ```
 
-Wait until the mongo replica set status is ready:
+Scale the mongo deployment
 
-```bash
-kubectl get rs mongo -o wide --watch
+```
+kubectl scale deploy/mongo --replicas=2
+```
+
+Wait until the mongo deployment shows 2 pods available
+
+```
+kubectl get deploy mongo -o wide --watch
 ```
 
 #### Create the MongoDB Replication Set
@@ -238,19 +224,24 @@ Wait and verify the service has all the external IP addresses (dynamic DNS for A
 kubectl get svc pacman -o wide --watch
 ```
 
-#### Create the Pac-Man Replica Set
+#### Create the Pac-Man Deployment
 
-We'll need to create the Pac-Man game replica set to access the application on port 80.
+We'll need to create the Pac-Man game deployment to access the application on port 80.
 
-```bash
-cat replicasets/pacman-replicaset-us-aws-gke-migration-1.yaml
-kubectl create -f replicasets/pacman-replicaset-us-aws-gke-migration-1.yaml
+```
+kubectl create -f deployments/pacman-deployment-rs.yaml
 ```
 
-Wait until the replica set status is ready for all replicas:
+Scale the pacman deployment
 
-```bash
-kubectl get rs pacman -o wide --watch
+```
+kubectl scale deploy/pacman --replicas=2
+```
+
+Wait until the pacman deployment shows 2 pods available
+
+```
+kubectl get deploy pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for the replica, open up your browser and try to access it via its
@@ -313,14 +304,14 @@ rs.status()
 Now we will migrate the MongoDB instance away from the east AWS cluster:
 
 ```
-cat replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-2.yaml
-kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us-aws-gke-migration-2.yaml
+kubectl annotate deploy/mongo federation.kubernetes.io/deployment-preferences='{"rebalance": true, "clusters": {"gce-us-west1": {"minReplicas": 1, "maxReplicas": 1, "weight": 1},"aws-us-east1": {"minReplicas": 0, "maxReplicas": 0, "weight": 0}}}'
+kubectl scale deploy/mongo --replicas=1
 ```
 
-Wait until the mongo replica set status is ready and reflects the changes:
+Wait until the mongo deployment reflects the changes:
 
 ```
-kubectl get rs mongo -o wide --watch
+kubectl get deploy mongo -o wide --watch
 ```
 
 ### Migrate Pac-Man Resources
@@ -330,14 +321,13 @@ kubectl get rs mongo -o wide --watch
 We'll need to migrate the Pac-Man game to the us-west cluster.
 
 ```
-cat replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
-kubectl create -f replicasets/pacman-replicaset-us-aws-gke-migration-2.yaml
+kubectl annotate deploy/pacman federation.kubernetes.io/deployment-preferences='{"rebalance": true, "clusters": {"gce-us-west1": {"minReplicas": 2, "maxReplicas": 2, "weight": 0},"aws-us-east1": {"minReplicas": 0, "maxReplicas": 0, "weight": 0}}}'
 ```
 
 You can check the `pacman` replica set status but keep in mind we're still keeping 2 replicas:
 
 ```
-kubectl get rs pacman -o wide --watch
+kubectl get deploy pacman -o wide --watch
 for c in ${KUBE_FED_CLUSTERS}; do echo; echo -----${c}-----; echo; kubectl --context=${c} get pods; echo; done
 ```
 
@@ -369,72 +359,27 @@ us-west region and continue playing Pac-Man!
 
 ##### Delete Pac-Man Replica Set and Service
 
-Delete Pac-Man replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
+Delete Pac-Man deployment and service. Seeing the deployment removed from the federation context may take up to a couple minutes.
 
-```bash
-kubectl delete rs pacman
-kubectl delete svc pacman
 ```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
-
-```bash
-for i in ${KUBE_FED_CLUSTERS}; do
-    kubectl --context=${i} delete svc pacman
-done
-```
-
-```bash
-for i in ${KUBE_FED_CLUSTERS}; do
-    kubectl --context=${i} delete rs pacman
-done
+kubectl delete deploy/pacman svc/pacman
 ```
 
 #### Delete MongoDB Resources
 
-##### Delete MongoDB Replica Set and Service
+##### Delete MongoDB Deployment and Service
 
-Delete MongoDB replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
+Delete MongoDB deployment and service. Seeing the deployment removed from the federation context may take up to a couple minutes.
 
-```bash
-kubectl delete rs mongo
-kubectl delete svc mongo
 ```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
-
-```bash
-for i in ${KUBE_FED_CLUSTERS}; do
-    kubectl --context=${i} delete svc mongo
-done
-```
-
-```bash
-for i in ${KUBE_FED_CLUSTERS}; do
-    kubectl --context=${i} delete rs mongo
-done
+kubectl delete deploy/mongo svc/mongo
 ```
 
 ##### Delete MongoDB Persistent Volume Claims
 
-```bash
-for i in ${KUBE_FED_CLUSTERS}; do
-    kubectl --context=${i} \
-    delete -f persistentvolumeclaim/mongo-pvc.yaml
-done
 ```
-
-##### Delete MongoDB Storage Class
-
-```bash
-for i in ${KUBE_FED_CLUSTERS}; do
-    kubectl --context=${i} delete storageclass slow
+for i in ${GCE_ZONES}; do \
+    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 delete pvc/mongo-storage; \
 done
 ```
 

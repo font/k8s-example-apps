@@ -132,40 +132,16 @@ kubefed join aws-us-east1 \
 kubectl get clusters -w
 ```
 
-## Update KubeDNS
+Verify that the default namespace exists in the federation
 
-Lastly, now that the federated cluster is up and ready, we need to update kube-dns in each cluster to specify the federation domain name.
-Unfortunately, this is a manual step that `kubefed` does not do for you yet unless you're using Kubernetes 1.6 release. See Kubernetes issue #38400
-and PR #39338 for more details.
-
-To update the kube-dns we will add a config map to the kube-dns namespace in each cluster specifying the federation domain name.
-
-#### Replace federation zone name
-
-Before running the below command make sure to replace `federation.com` with the zone name you specified when creating your
-DNS Managed Zone.
-
-```bash
-sed 's/federation.com/YOUR_ZONE_NAME/' configmap/federation-cm.yaml > tmp \
-    && mv -f tmp configmap/federation-cm.yaml
+```
+kubectl get namespaces
 ```
 
-#### Create the Config Map For All Clusters
+If it is missing, create it:
 
-```bash
-for c in ${JOIN_CLUSTERS}; do
-    kubectl --context=${c} \
-        --namespace=kube-system \
-        create -f configmap/federation-cm.yaml
-done
 ```
-
-```bash
-for c in ${JOIN_CLUSTERS}; do
-    kubectl --context=${c} \
-        --namespace=kube-system \
-        get configmap kube-dns -o yaml
-done
+kubectl create -f namespaces/default.yaml
 ```
 
 You should now have a working federated Kubernetes cluster spanning each zone.

@@ -45,7 +45,6 @@ Follow these steps:
     2. [Set kubectl to use the federation context](kubernetes-cluster-gke-federation.md#use-federation-context)
     3. Join only the [west](kubernetes-cluster-gke-federation.md#gce-us-west1-1) and [central](kubernetes-cluster-gke-federation.md#gce-us-central1-1) regions
     4. [Verify the clusters in the federation](kubernetes-cluster-gke-federation.md#verify)
-    4. [Update KubeDNS](kubernetes-cluster-gke-federation.md#update-kubedns) in all the regions with the federation config map
 
 #### Export the zones your clusters are in
 
@@ -56,18 +55,6 @@ export GCE_ZONES="west central"
 ```
 
 ## Create MongoDB Resources
-
-#### Create MongoDB Storage Class
-
-We need to create persistent volume claims for our MongoDB to persist the database. For this we'll deploy a Storage Class to
-utilize GCE Persistent Disks.
-
-```
-for i in ${GCE_ZONES}; do \
-    kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    create -f storageclass/gce-storageclass.yaml; \
-done
-```
 
 #### Create MongoDB Persistent Volume Claims
 
@@ -105,20 +92,26 @@ Wait until the mongo service has all the external IP addresses listed:
 kubectl get svc mongo -o wide --watch
 ```
 
-#### Create MongoDB Kubernetes Replica Set
+#### Create MongoDB Kubernetes Deployment
 
-Now create the  MongoDB Replica Set that will use the `mongo-storage` persistent volume claim to mount the
+Now create the MongoDB Deployment that will use the `mongo-storage` persistent volume claim to mount the
 directory that is to contain the MongoDB database files. In addition, we will pass the `--replSet rs0` parameter
 to `mongod` in order to create a MongoDB replica set.
 
 ```
-kubectl create -f replicasets/mongo-replicaset-pvc-rs0-us-gke-scale-1.yaml
+kubectl create -f deployments/mongo-deployment-rs.yaml
 ```
 
-Wait until the mongo replica set status is ready:
+Scale the mongo deployment
 
 ```
-kubectl get rs mongo -o wide --watch
+kubectl scale deploy/mongo --replicas=2
+```
+
+Wait until the mongo deployment shows 2 pods available
+
+```
+kubectl get deploy mongo -o wide --watch
 ```
 
 #### Create the MongoDB Replication Set
@@ -215,18 +208,24 @@ Wait and verify the service has all the external IP addresses listed:
 kubectl get svc pacman -o wide --watch
 ```
 
-#### Create the Pac-Man Replica Set
+#### Create the Pac-Man Deployment
 
-We'll need to create the Pac-Man game replica set to access the application on port 80.
-
-```
-kubectl create -f replicasets/pacman-replicaset-us-gke-scale-1.yaml
-```
-
-Wait until the replica set status is ready for all replicas:
+We'll need to create the Pac-Man game deployment to access the application on port 80.
 
 ```
-kubectl get rs pacman -o wide --watch
+kubectl create -f deployments/pacman-deployment-rs.yaml
+```
+
+Scale the pacman deployment
+
+```
+kubectl scale deploy/pacman --replicas=2
+```
+
+Wait until the pacman deployment shows 2 pods available
+
+```
+kubectl get deploy pacman -o wide --watch
 ```
 
 Once the `pacman` service has an IP address for each replica, open up your browser and try to access it via its
@@ -264,16 +263,6 @@ export GCE_ZONES="west central east"
 
 #### Scale the MongoDB Resources
 
-###### Create MongoDB Storage Class
-
-We need to create persistent volume claims for our MongoDB to persist the database in the new region. For this we'll deploy a Storage Class to
-utilize GCE Persistent Disks.
-
-```
-kubectl --context=gke_${GCP_PROJECT}_us-east1-b_gce-us-east1 \
-    create -f storageclass/gce-storageclass.yaml
-```
-
 ###### Create MongoDB Persistent Volume Claims
 
 Now that we have the storage class created in the cluster we'll create the PVC:
@@ -308,13 +297,13 @@ directory that is to contain the MongoDB database files. In addition, we will ad
 in order to replicate the MongoDB data set across to the new cluster.
 
 ```
-kubectl apply -f replicasets/mongo-replicaset-pvc-rs0-us-gke.yaml
+kubectl scale deploy/mongo --replicas=3
 ```
 
-Wait until the mongo replica set status is ready:
+Wait until the mongo deployment shows 3 pods available:
 
 ```
-kubectl get rs mongo -o wide --watch
+kubectl get deploy/mongo -o wide --watch
 ```
 
 ###### Scale the MongoDB Replication Set
@@ -392,13 +381,13 @@ kubectl get svc pacman -o wide --watch
 We'll need to scale the Pac-Man game to the new cluster.
 
 ```
-kubectl apply -f replicasets/pacman-replicaset-us-gke.yaml
+kubectl scale deploy/pacman --replicas=3
 ```
 
 Wait until the replica set status is ready for the new replica:
 
 ```
-kubectl get rs pacman -o wide --watch
+kubectl get deploy/pacman -o wide --watch
 ```
 
 Once the new `pacman` replica set is ready, open up your browser and try to access it via its specific
@@ -422,24 +411,7 @@ new us-east region and continue playing Pac-Man!
 Delete Pac-Man replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
 
 ```
-kubectl delete -f replicasets/pacman-replicaset-us-gke.yaml -f services/pacman-service.yaml
-```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete svc pacman; \
-done
-```
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete rs pacman; \
-done
+kubectl delete deploy/pacman svc/pacman
 ```
 
 #### Delete MongoDB Resources
@@ -449,24 +421,7 @@ done
 Delete MongoDB replica set and service. Seeing the replica set removed from the federation context may take up to a couple minutes.
 
 ```
-kubectl delete -f replicasets/mongo-replicaset-pvc-rs0-us-gke.yaml -f services/mongo-service.yaml
-```
-
-If you do not have cascading deletion enabled via `DeleteOptions.orphanDependents=false`, then you may have to remove the service and replicasets
-in each cluster as well. See [cascading-deletion](https://kubernetes.io/docs/user-guide/federation/#cascading-deletion) for more details.
-
-Note: Kubernetes version 1.6 includes support for cascading deletion of federated resources.
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete svc mongo; \
-done
-```
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete rs mongo; \
-done
+kubectl delete deploy/mongo svc/mongo
 ```
 
 ##### Delete MongoDB Persistent Volume Claims
@@ -474,15 +429,7 @@ done
 ```
 for i in ${GCE_ZONES}; do \
     kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete -f persistentvolumeclaim/mongo-pvc.yaml; \
-done
-```
-
-##### Delete MongoDB Storage Class
-
-```
-for i in ${GCE_ZONES}; do kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 \
-    delete -f storageclass/gce-storageclass.yaml; \
+    delete pvc/mongo-storage; \
 done
 ```
 
