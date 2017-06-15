@@ -7,9 +7,6 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
-# Update mongo host from 'localhost' to 'mongo'
-RUN sed -i 's/localhost/172.17.0.2/' router/config.js
-
 # Expose port 8080
 EXPOSE 8080
 
