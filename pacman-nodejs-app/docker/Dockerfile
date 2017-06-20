@@ -9,14 +9,11 @@ WORKDIR /usr/src/app
 # Clone game source code
 RUN git clone https://github.com/font/pacman.git .
 
-# Update mongo host from 'localhost' to 'mongo'
-RUN sed -i 's/localhost/mongo/' lib/config.js
-
 # Install app dependencies
 RUN npm install
 
-# Expose port 80
-EXPOSE 80
+# Expose port 8080
+EXPOSE 8080
 
 # Run container
 CMD ["npm", "start"]
