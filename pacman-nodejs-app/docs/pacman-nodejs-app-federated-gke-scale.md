@@ -58,7 +58,7 @@ export GCE_ZONES="west central"
 
 #### Create MongoDB Persistent Volume Claims
 
-Now that we have the storage class created in each cluster we'll create the PVC:
+Now using the default storage class in each cluster, we'll create the PVC:
 
 ```
 for i in ${GCE_ZONES}; do \
@@ -265,7 +265,7 @@ export GCE_ZONES="west central east"
 
 ###### Create MongoDB Persistent Volume Claims
 
-Now that we have the storage class created in the cluster we'll create the PVC:
+Now using the default storage class in the cluster, we'll create the PVC:
 
 ```
 kubectl --context=gke_${GCP_PROJECT}_us-east1-b_gce-us-east1 \

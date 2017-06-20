@@ -284,7 +284,7 @@ export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 us-east-1.s
 
 ###### Create MongoDB Persistent Volume Claims
 
-Now that we have the storage class created in the cluster we'll create the PVC:
+Now using the default storage class in the cluster, we'll create the PVC:
 
 ```bash
 for i in ${KUBE_FED_CLUSTERS}; do
