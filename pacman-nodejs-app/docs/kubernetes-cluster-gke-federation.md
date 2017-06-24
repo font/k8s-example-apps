@@ -20,7 +20,7 @@ For example, if you'd like to deploy Kubernetes version 1.6.4, then pass in `--c
 
 #### Configure gcloud to use client certificate
 
-To avoid issues with RBAC permissions, configure gcloud to use client certificates:
+To avoid issues with RBAC permissions, configure gcloud to use client certificates using one of the options below
 
 ```
 gcloud config set container/use_client_certificate True

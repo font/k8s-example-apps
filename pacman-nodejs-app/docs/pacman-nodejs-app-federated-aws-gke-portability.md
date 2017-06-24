@@ -94,7 +94,6 @@ the host it connects to instead of `localhost`. Using `mongo` in each applicatio
 that's closest to the application in the cluster.
 
 ```bash
-cat services/mongo-service.yaml
 kubectl create -f services/mongo-service.yaml
 ```
 
@@ -214,7 +213,6 @@ This component creates the necessary `pacman` federation DNS entries for each cl
 as well as a top level DNS A entry that will resolve to all zones for load balancing.
 
 ```bash
-cat services/pacman-service.yaml
 kubectl create -f services/pacman-service.yaml
 ```
 
@@ -328,7 +326,7 @@ You can check the `pacman` replica set status but keep in mind we're still keepi
 
 ```
 kubectl get deploy pacman -o wide --watch
-for c in ${KUBE_FED_CLUSTERS}; do echo; echo -----${c}-----; echo; kubectl --context=${c} get pods; echo; done
+for c in ${KUBE_FED_CLUSTERS}; do echo; echo ----- ${c} -----; echo; kubectl --context=${c} get pods; echo; done
 ```
 
 Once the `pacman` replica set reflects the changes, open up your browser and try to access it
