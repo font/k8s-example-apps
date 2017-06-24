@@ -376,7 +376,7 @@ kubectl delete deploy/mongo svc/mongo
 ##### Delete MongoDB Persistent Volume Claims
 
 ```
-for i in ${GCE_ZONES}; do \
+for i in ${KUBE_FED_CLUSTERS}; do \
     kubectl --context=gke_${GCP_PROJECT}_us-${i}1-b_gce-us-${i}1 delete pvc/mongo-storage; \
 done
 ```
