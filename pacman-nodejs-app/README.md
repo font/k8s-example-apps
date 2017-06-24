@@ -116,3 +116,10 @@ Follow the instructions in the below links to test out different federation scen
 - [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)
 - [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-portability.md)
 - [Pac-Man application deployed on AWS federation, then scaled to GKE, then migrated to GKE](docs/pacman-nodejs-app-federated-aws-gke-scale-migrate.md)
+
+## Kubernetes Federation Issues
+
+Below is a link to some of the known Kubernetes Federation issues that prevents any given Pac-Man federated Kubernetes cluster scnearios above from fully functioning
+as intended.
+
+[Kubernetes Federation Issues](docs/kubernetes-federation-issues.md)
