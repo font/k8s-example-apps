@@ -1,13 +1,11 @@
 # Kubernetes Migration Tool
 
 This tool is a proof-of-concept to help demonstrate an application migration use-case. The application of choice is Pac-Man. It will be migrated from
-cluster A to cluster B.
+cluster A (SOURCE) to cluster B (DESTINATION).
 
-## Setup Pac-Man Application On Cluster A
+## Create Kubernetes Clusters
 
-### Create Kubernetes Clusters
-
-#### US West
+### US West
 
 ```bash
 gcloud container clusters create gce-us-west1 \
@@ -15,7 +13,7 @@ gcloud container clusters create gce-us-west1 \
     --scopes "cloud-platform,storage-ro,logging-write,monitoring-write,service-control,service-management,https://www.googleapis.com/auth/ndev.clouddns.readwrite"
 ```
 
-#### US Central
+### US Central
 
 ```bash
 gcloud container clusters create gce-us-central1 \
@@ -23,11 +21,15 @@ gcloud container clusters create gce-us-central1 \
     --scopes "cloud-platform,storage-ro,logging-write,monitoring-write,service-control,service-management,https://www.googleapis.com/auth/ndev.clouddns.readwrite"
 ```
 
-### Use US West cluster context
+### Store the GCP Project Name
 
 ```bash
 export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 ```
+
+## Setup Pac-Man Application On Cluster A
+
+### Use US West Cluster Context
 
 ```bash
 kubectl config use-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1
@@ -102,10 +104,11 @@ we need to run the following commands on the MongoDB instance you want to design
 we're using the us-west1-b instance:
 
 ```
-MONGO_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
+MONGO_SRC_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 exec -it ${MONGO_POD} -- bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    exec -it ${MONGO_SRC_POD} -- bash
 ```
 
 Once inside this pod, make sure the Mongo DNS entry you plan to use is resolvable. Otherwise the command to initialize the Mongo
@@ -162,7 +165,7 @@ Once you have this instance showing up as `PRIMARY`, you have a working MongoDB 
 
 Go ahead and exit out of the Mongo CLI and out of the Pod.
 
-## Creating the Pac-Man Resources
+### Creating the Pac-Man Resources
 
 #### Create Pac-Man Service
 
@@ -200,21 +203,22 @@ kubectl get pods -o wide --watch
 
 Once the pacman pods are running and the `pacman` service has an IP address, open up your browser and try to access it via `http://<EXTERNAL_IP>/`.
 
-#### Save Pac-Man Load Balancer IP
+#### Save Pac-Man and MongoDB Load Balancer IP
 
 ```
-PACMAN_PUBLIC_IP=$(kubectl get svc pacman  --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
+PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
+MONGO_SRC_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
 ```
 
 #### Add DNS A record
 
 ```bash
 gcloud dns record-sets transaction start -z=zonename
-gcloud dns record-sets transaction add -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=zonename
 ```
 
-## Migrate Pac-Man Application Onto Cluster B
+## Migrate Pac-Man Application Onto Cluster B (Automated)
 
 In addition to the above setup, in order to perform this migration, the tool makes the following assumptions:
 
@@ -226,3 +230,190 @@ In addition to the above setup, in order to perform this migration, the tool mak
 6. gcloud command is installed and working on client to access both clusters
 7. kubectl is installed and configured to access both clusters using the provided contexts
 
+## Migrate Pac-Man Application Onto Cluster B (Manually)
+
+### Save cluster resources in pacman namespace
+
+Create dump directory:
+
+```bash
+mkdir ./pacman-ns-dump
+```
+
+Export desired namespace:
+
+```bash
+kubectl get --export -o=json ns | jq '.items[] |
+select(.metadata.name=="pacman") |
+del(.status,
+        .metadata.uid,
+        .metadata.selfLink,
+        .metadata.resourceVersion,
+        .metadata.creationTimestamp,
+        .metadata.generation
+    )' > ./pacman-ns-dump/ns.json
+
+```
+
+Export desired resources from namespace:
+
+```bash
+for ns in $(jq -r '.metadata.name' < ./pacman-ns-dump/ns.json);do
+    echo "Namespace: $ns"
+    kubectl --namespace="${ns}" get --export -o=json pvc,secrets,svc,deploy,rc,ds | \
+    jq '.items[] |
+        select(.type!="kubernetes.io/service-account-token") |
+        del(
+            .spec.clusterIP,
+            .metadata.uid,
+            .metadata.selfLink,
+            .metadata.resourceVersion,
+            .metadata.creationTimestamp,
+            .metadata.generation,
+            .metadata.annotations,
+            .status,
+            .spec.template.spec.securityContext,
+            .spec.template.spec.dnsPolicy,
+            .spec.template.spec.terminationGracePeriodSeconds,
+            .spec.template.spec.restartPolicy,
+            .spec.storageClassName,
+            .spec.volumeName
+        )' > "./pacman-ns-dump/pacman-ns-dump.json"
+done
+```
+
+### Switch Contexts to Cluster B (Destination)
+
+We will be migrating to our US Central region:
+
+```bash
+kubectl config use-context gke_${GCP_PROJECT}_us-central1-b_gce-us-central1
+```
+
+### Create and Use the pacman Namespace
+
+Create the namespace needed for the migration:
+
+```bash
+kubectl create -f pacman-ns-dump/ns.json
+```
+
+Set the namespace of the context:
+
+```bash
+kubectl config set-context gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 --namespace pacman
+```
+
+### Create Pac-Man Kubernetes Resources
+
+Add the exported resources into the namespace:
+
+```bash
+kubectl create -f pacman-ns-dump/pacman-ns-dump.json
+```
+
+### Verify All Resources
+
+All resources are ready and available after all pods are in the `RUNNING` state or their corresponding deployments show the correct number of pods `AVAILABLE`.
+Also when all services show an `EXTERNAL-IP`.
+
+```bash
+kubectl get all -o wide -w
+```
+
+### Save Pac-Man and MongoDB Load Balancer IP
+
+```bash
+PACMAN_DST_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
+MONGO_DST_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
+```
+
+### Add New Mongo Instance to Replica Set
+
+Connect to the mongo pod in cluster A and invoke the mongo client to connect to the mongodb PRIMARY in order to add the new mongo instance as a replica set SECONDARY.
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    exec -it ${MONGO_SRC_POD} -- \
+    mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_IP}:27017\")"
+```
+
+### Check Status of New Mongo Instance In Replica Set
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    exec -it ${MONGO_SRC_POD} -- \
+    mongo --eval "rs.status()"
+```
+
+### Make New Mongo Instance Primary
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    exec -it ${MONGO_SRC_POD} -- \
+    mongo --eval "rs.stepDown(120)"
+```
+
+### Update DNS
+
+Update DNS to point to new cluster:
+
+```bash
+gcloud dns record-sets transaction start -z=zonename
+gcloud dns record-sets transaction remove -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+gcloud dns record-sets transaction execute -z=zonename
+```
+
+### Remove Old Mongo Instance From Replica Set
+
+```bash
+MONGO_DST_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 get pod \
+    --selector="name=mongo" \
+    --output=jsonpath='{.items..metadata.name}')
+kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+    exec -it ${MONGO_DST_POD} -- \
+    mongo --eval "rs.remove(\"${MONGO_SRC_PUBLIC_IP}:27017\")"
+```
+
+### Check Status to Verify Removal
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+    exec -it ${MONGO_DST_POD} -- \
+    mongo --eval "rs.status()"
+```
+
+### Remove Old Pac-man Cluster Resources
+
+```bash
+kubectl --context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    delete ns pacman
+```
+
+## Cleanup
+
+```bash
+gcloud dns record-sets transaction start -z=zonename
+gcloud dns record-sets transaction remove -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+gcloud dns record-sets transaction execute -z=zonename
+```
+
+```bash
+kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+    delete ns pacman
+```
+
+### Remove Kubernetes Clusters
+
+#### US West
+
+```bash
+gcloud container clusters delete gce-us-west1 --zone=us-west1-b
+```
+
+#### US Central
+
+```bash
+gcloud container clusters delete gce-us-central1 --zone=us-central1-b
+```
