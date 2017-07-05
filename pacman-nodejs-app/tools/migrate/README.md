@@ -184,18 +184,18 @@ PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBa
 
 #### Add DNS A record
 
-Set the value of your `ZONE_NAME` and `DOMAIN_NAME` name used for your Google Cloud DNS configuration.
+Set the value of your `ZONE_NAME` and `DNS_NAME` name used for your Google Cloud DNS configuration.
 
 ```bash
 ZONE_NAME=zonename
-DOMAIN_NAME=example.com
+DNS_NAME=example.com
 ```
 
 Then execute the below commands:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
@@ -341,8 +341,8 @@ Update DNS to point to new cluster:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
-gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
@@ -376,7 +376,7 @@ kubectl --context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
