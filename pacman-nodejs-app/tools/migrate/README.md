@@ -81,84 +81,57 @@ Now create the MongoDB Deployment that will use the `mongo-storage` persistent v
 directory that is to contain the MongoDB database files. In addition, we will pass the `--replSet rs0` parameter
 to `mongod` in order to create a MongoDB replica set.
 
-```
+```bash
 kubectl create -f deployments/mongo-deployment-rs.yaml
 ```
 
 Scale the deployment, since the deployment definition has replicas set to 0:
 
-```
+```bash
 kubectl scale deploy/mongo --replicas=1
 ```
 
 Verify the container has been created and is in the running state:
 
-```
+```bash
 kubectl get pods -o wide --watch
+```
+
+#### Save MongoDB Load Balancer IP
+
+```bash
+MONGO_SRC_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
 ```
 
 #### Create the MongoDB Replication Set
 
 We'll have to bootstrap the MongoDB instance since we're using a replication set. For this,
-we need to run the following commands on the MongoDB instance you want to designate as the primary (master). For our example,
+we need to run the following command on the MongoDB instance you want to designate as the primary (master). For our example,
 we're using the us-west1-b instance:
 
-```
+```bash
 MONGO_SRC_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
 kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
-    exec -it ${MONGO_SRC_POD} -- bash
-```
-
-Once inside this pod, make sure the Mongo DNS entry you plan to use is resolvable. Otherwise the command to initialize the Mongo
-replica set below will fail. You can do this by installing DNS utilities such as `dig` and `nslookup` using:
-
-**NOTE: If you're using the load balancer IP address, you can skip this step.**
-
-```
-apt-get update
-apt-get -y install dnsutils
-```
-
-Then use either `dig` or `nslookup` to perform one of the following lookups:
-
-```
-dig mongo.us-west1.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.us-west1.<DNS_ZONE_NAME>
-```
-
-Once they are resolvable, launch the `mongo` CLI:
-
-```
-mongo
-```
-
-Now we'll create an initial configuration specifying just this mongo in our replication set. In our example,
-we'll use the west instance. Make sure to replace `<DNS_ZONE_NAME>.com` with the DNS zone name you created.
-
-```
-initcfg = {
-        "_id" : "rs0",
-        "members" : [
-                {
-                        "_id" : 0,
-                        "host" : "mongo.us-west1.<DNS_ZONE_NAME>.com:27017"
-                }
-        ]
-}
-```
-
-Initiate the MongoDB replication set:
-
-```
-rs.initiate(initcfg)
+    exec -it ${MONGO_SRC_POD} -- \
+    mongo --eval "rs.initiate({
+                    '_id' : 'rs0',
+                    'members' : [
+                        {
+                            '_id' : 0,
+                            'host' : \"${MONGO_SRC_PUBLIC_IP}:27017\"
+                        }
+                    ]
+                })"
 ```
 
 Check the status until this instance shows as `PRIMARY`:
 
 ```
-rs.status()
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+    exec -it ${MONGO_SRC_POD} -- \
+    mongo --eval "rs.status()"
 ```
 
 Once you have this instance showing up as `PRIMARY`, you have a working MongoDB replica set that will replicate data.
@@ -171,13 +144,13 @@ Go ahead and exit out of the Mongo CLI and out of the Pod.
 
 This component creates the service to access the application.
 
-```
+```bash
 kubectl create -f services/pacman-service.yaml
 ```
 
 Wait until the pacman service has the external IP address listed:
 
-```
+```bash
 kubectl get svc pacman -o wide --watch
 ```
 
@@ -185,37 +158,45 @@ kubectl get svc pacman -o wide --watch
 
 Now create the Pac-Man deployment.
 
-```
+```bash
 kubectl create -f deployments/pacman-deployment-rs.yaml
 ```
 
 Scale the deployment, since the deployment definition has replicas set to 0.
 
-```
+```bash
 kubectl scale deploy/pacman --replicas=2
 ```
 
 Verify the containers have been created and are in the running state:
 
-```
+```bash
 kubectl get pods -o wide --watch
 ```
 
 Once the pacman pods are running and the `pacman` service has an IP address, open up your browser and try to access it via `http://<EXTERNAL_IP>/`.
 
-#### Save Pac-Man and MongoDB Load Balancer IP
+#### Save Pac-Man Load Balancer IP
 
-```
+```bash
 PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
-MONGO_SRC_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
 ```
 
 #### Add DNS A record
 
+Set the value of your `ZONE_NAME` and `DOMAIN_NAME` name used for your Google Cloud DNS configuration.
+
 ```bash
-gcloud dns record-sets transaction start -z=zonename
-gcloud dns record-sets transaction add -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
-gcloud dns record-sets transaction execute -z=zonename
+ZONE_NAME=zonename
+DOMAIN_NAME=example.com
+```
+
+Then execute the below commands:
+
+```bash
+gcloud dns record-sets transaction start -z=${ZONE_NAME}
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
 ## Migrate Pac-Man Application Onto Cluster B (Automated)
@@ -359,10 +340,10 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 Update DNS to point to new cluster:
 
 ```bash
-gcloud dns record-sets transaction start -z=zonename
-gcloud dns record-sets transaction remove -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
-gcloud dns record-sets transaction add -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
-gcloud dns record-sets transaction execute -z=zonename
+gcloud dns record-sets transaction start -z=${ZONE_NAME}
+gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
 ### Remove Old Mongo Instance From Replica Set
@@ -394,9 +375,9 @@ kubectl --context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 ## Cleanup
 
 ```bash
-gcloud dns record-sets transaction start -z=zonename
-gcloud dns record-sets transaction remove -z=zonename --name="pacman.example.com" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
-gcloud dns record-sets transaction execute -z=zonename
+gcloud dns record-sets transaction start -z=${ZONE_NAME}
+gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DOMAIN_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
 ```bash
