@@ -4,7 +4,7 @@
 #
 #
 #
-set -e
+set -ex
 
 function usage {
     echo "$0: [-f|--from-context CONTEXT] [-t|--to-context CONTEXT] [-n|--namespace NAMESPACE] [-z|--zone ZONE_NAME] [-d|--dns DNS_NAME]"
@@ -112,9 +112,160 @@ function validate_args {
     validate_dns_name
 }
 
+# Using SOURCE cluster, dump resources into JSON file in temporary directory
+function save_src_cluster_resources {
+    temp_dir="$(date +%F_%T)-${NAMESPACE}-dump"
+    mkdir ${temp_dir}
+
+    kubectl config use-context ${SRC_CONTEXT}
+
+    kubectl get --export -o=json ns | jq ".items[] |
+        select(.metadata.name=='${NAMESPACE}') |
+        del(.status,
+            .metadata.uid,
+            .metadata.selfLink,
+            .metadata.resourceVersion,
+            .metadata.creationTimestamp,
+            .metadata.generation
+           )" > ./${temp_dir}/ns.json
+
+    for ns in $(jq -r '.metadata.name' < ./${temp_dir}/ns.json); do
+        kubectl --namespace="${ns}" get --export -o=json pvc,secrets,svc,deploy,rc,ds | \
+        jq '.items[] |
+            select(.type!="kubernetes.io/service-account-token") |
+            del(
+                .spec.clusterIP,
+                .metadata.uid,
+                .metadata.selfLink,
+                .metadata.resourceVersion,
+                .metadata.creationTimestamp,
+                .metadata.generation,
+                .metadata.annotations,
+                .status,
+                .spec.template.spec.securityContext,
+                .spec.template.spec.dnsPolicy,
+                .spec.template.spec.terminationGracePeriodSeconds,
+                .spec.template.spec.restartPolicy,
+                .spec.storageClassName,
+                .spec.volumeName
+            )' > "./${temp_dir}/${ns}-ns-dump.json"
+    done
+
+    local services=$(jq -r '(. + select(.kind == "Service") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
+
+    # Save off public IP addresses for services in source cluster
+    for s in ${services}; do
+        eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    done
+}
+
+function create_dst_cluster_resources {
+    kubectl config use-context ${DST_CONTEXT}
+    kubectl create -f ${temp_dir}/ns.json
+    kubectl config set-context ${DST_CONTEXT} --namespace ${NAMESPACE}
+    kubectl create -f ./${temp_dir}/${NAMESPACE}-ns-dump.json
+}
+
+function valid_ip {
+    local ip=$1
+    local rc=1
+
+    if [[ ${ip} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=${IFS}
+        IFS='.'
+        ip=(${ip})
+        IFS=${OIFS}
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255
+            && ${ip[3]} -le 255 ]]
+        rc=$?
+    fi
+
+    return ${rc}
+}
+
+function verify_services_ready {
+    local timeout=120 # wait no more than 2 minutes
+    local services=$(jq -r '(. + select(.kind == "Service") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
+
+    # Loop until all services have a load balancer IP address
+    local all_ready=false
+    while [[ ${all_ready} == false && ${timeout} -gt 0 ]]; do
+        all_ready=true
+
+        for s in ${services}; do
+            # Filter service load balancer IP address
+            local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+            # If we determine that deployment is not ready, try again.
+            if ! valid_ip ${service_ip}; then
+                all_ready=false
+                break
+            fi
+        done
+
+        (( timeout-- ))
+        sleep 1
+    done
+
+    if [[ ${all_ready} == true ]]; then
+        echo "All services ready"
+        # Save off public IP addresses for services in destination cluster
+        for s in ${services}; do
+            eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        done
+    elif [[ ${timeout} -le 0 ]]; then
+        echo "WARNING: timeout waiting for services ${services}"
+    fi
+}
+
+function verify_deployments_ready {
+    local timeout=120 # wait no more than 2 minutes
+    local deployments=$(jq -r '(. + select(.kind == "Deployment") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
+
+    # Loop until all deployments have the correct number of replicas running
+    local all_ready=false
+    while [[ ${all_ready} == false && ${timeout} -gt 0 ]]; do
+        all_ready=true
+
+        for d in ${deployments}; do
+            # Filter deployment whose replica counts do not match i.e. creating
+            local not_ready=$(kubectl get deploy/$d -o json | \
+                jq '.status | select(.availableReplicas != .readyReplicas) and select(.readyReplicas != .replicas)')
+
+            # If we determine that deployment is not ready, try again.
+            if [[ ${not_ready} == true ]]; then
+                all_ready=false
+                break
+            fi
+        done
+
+        (( timeout-- ))
+        sleep 1
+    done
+
+    if [[ ${all_ready} == true ]]; then
+        echo "All deployments ready"
+    elif [[ ${timeout} -le 0 ]]; then
+        echo "WARNING: timeout waiting for deployments ${deployments}"
+    fi
+}
+
+function verify_resources_ready {
+    verify_services_ready
+    verify_deployments_ready
+}
+
+function migrate_resources {
+    echo "Migrating ${NAMESPACE} namespace from cluster ${SRC_CLUSTER} to ${DST_CLUSTER}..."
+    save_src_cluster_resources
+    create_dst_cluster_resources
+    verify_resources_ready
+}
+
 function main {
     parse_args $@
     validate_args
+    migrate_resources
 }
 
 main $@
