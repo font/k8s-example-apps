@@ -78,6 +78,8 @@ function validate_contexts {
 }
 
 function validate_namespace {
+    kubectl config use-context ${SRC_CONTEXT}
+
     if ! $(kubectl get namespace ${NAMESPACE} &> /dev/null); then
         echo "Error: invalid namespace ${NAMESPACE}"
         usage
@@ -120,7 +122,7 @@ function save_src_cluster_resources {
     kubectl config use-context ${SRC_CONTEXT}
 
     kubectl get --export -o=json ns | jq ".items[] |
-        select(.metadata.name=='${NAMESPACE}') |
+        select(.metadata.name==\"${NAMESPACE}\") |
         del(.status,
             .metadata.uid,
             .metadata.selfLink,
