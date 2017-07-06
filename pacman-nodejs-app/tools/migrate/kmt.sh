@@ -211,7 +211,7 @@ function verify_services_ready {
         echo "All services ready"
         # Save off public IP addresses for services in destination cluster
         for s in ${services}; do
-            eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
         done
     elif [[ ${timeout} -le 0 ]]; then
         echo "WARNING: timeout waiting for services ${services}"
@@ -255,17 +255,34 @@ function verify_resources_ready {
     verify_deployments_ready
 }
 
+# This function attempts to handle the application specific instructions
+# needed to migrate the application appropriately. This function will is
+# executed all at once right now, but can eventually support a plugin model
+# where application specific code is inserted at particular milestones
+# e.g. key intervention points.
+function exec_app_recipe {
+    source $(dirname ${0})/${NAMESPACE,,}.sh
+    exec_app_entrypoint
+}
+
 function migrate_resources {
     echo "Migrating ${NAMESPACE} namespace from cluster ${SRC_CLUSTER} to ${DST_CLUSTER}..."
     save_src_cluster_resources
     create_dst_cluster_resources
+    sleep 10 # Give it a bit before attempting to verify
     verify_resources_ready
+    exec_app_recipe
+}
+
+function cleanup {
+    kubectl --context ${SRC_CONTEXT} delete ns ${NAMESPACE}
 }
 
 function main {
     parse_args $@
     validate_args
     migrate_resources
+    cleanup
 }
 
 main $@
