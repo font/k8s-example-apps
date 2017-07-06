@@ -30,8 +30,8 @@ function check_mongo_status {
             break;
         fi
 
-        (( timeout-- ))
-        sleep 1
+        (( timeout -= 5 ))
+        sleep 5
     done
 }
 

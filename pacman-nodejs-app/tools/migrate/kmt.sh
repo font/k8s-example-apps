@@ -205,8 +205,8 @@ function verify_services_ready {
             fi
         done
 
-        (( timeout-- ))
-        sleep 1
+        (( timeout -= 5 ))
+        sleep 5
     done
 
     if [[ ${all_ready} == true ]]; then
@@ -241,8 +241,8 @@ function verify_deployments_ready {
             fi
         done
 
-        (( timeout-- ))
-        sleep 1
+        (( timeout -= 5 ))
+        sleep 5
     done
 
     if [[ ${all_ready} == true ]]; then
