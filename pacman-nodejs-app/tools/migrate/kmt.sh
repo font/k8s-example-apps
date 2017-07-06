@@ -7,11 +7,12 @@
 set -e
 
 function usage {
-    echo "$0: [-f|--from-context CONTEXT] [-t|--to-context CONTEXT] [-z|--zone ZONE_NAME] [-d|--dns DNS_NAME]"
+    echo "$0: [-f|--from-context CONTEXT] [-t|--to-context CONTEXT] [-n|--namespace NAMESPACE] [-z|--zone ZONE_NAME] [-d|--dns DNS_NAME]"
     echo "    -f, --from-context     source CONTEXT to migrate application"
     echo "    -t, --to-context       destination CONTEXT to migration application"
-    echo "    -z, --zone             name of zone for your Google Cloud DNS"
-    echo "    -d, --dns              domain name used for your Google Cloud DNS zone"
+    echo "    -n, --namespace        namespace containing Kubernetes resources to migrate"
+    echo "    -z, --zone             name of zone for your Google Cloud DNS e.g. zonename"
+    echo "    -d, --dns              domain name used for your Google Cloud DNS zone e.g. example.com."
 }
 
 function parse_args {
@@ -25,6 +26,10 @@ function parse_args {
                 ;;
             -t|--to-context)
                 DST_CONTEXT="${2}"
+                shift
+                ;;
+            -n|--namespace)
+                NAMESPACE="${2}"
                 shift
                 ;;
             -z|--zone)
@@ -49,7 +54,7 @@ function parse_args {
         (( arg_count += 1 ))
     done
 
-    if [[ ${arg_count} -ne 4 ]]; then
+    if [[ ${arg_count} -ne 5 ]]; then
         echo "Error: missing required arguments"
         usage
         exit 1
@@ -72,9 +77,44 @@ function validate_contexts {
 
 }
 
+function validate_namespace {
+    if ! $(kubectl get namespace ${NAMESPACE} &> /dev/null); then
+        echo "Error: invalid namespace ${NAMESPACE}"
+        usage
+        exit 1
+    fi
+}
+
+function validate_zone_name {
+    zname=$(gcloud dns managed-zones list --filter="name = ${ZONE_NAME}" --format json | jq -r '.[0].name')
+
+    if [[ ${zname} != ${ZONE_NAME} ]]; then
+        echo "Error: invalid zone name ${ZONE_NAME}"
+        usage
+        exit 1
+    fi
+}
+
+function validate_dns_name {
+    dname=$(gcloud dns managed-zones list --filter='name = ifontlabs' --format json | jq -r '.[0].dnsName')
+
+    if [[ ${dname} != ${DNS_NAME} ]]; then
+        echo "Error: invalid DNS name ${DNS_NAME}"
+        usage
+        exit 1
+    fi
+}
+
+function validate_args {
+    validate_contexts
+    validate_namespace
+    validate_zone_name
+    validate_dns_name
+}
+
 function main {
     parse_args $@
-    validate_contexts $@
+    validate_args
 }
 
 main $@
