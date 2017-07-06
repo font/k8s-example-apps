@@ -188,7 +188,7 @@ Set the value of your `ZONE_NAME` and `DNS_NAME` name used for your Google Cloud
 
 ```bash
 ZONE_NAME=zonename
-DNS_NAME=example.com
+DNS_NAME=example.com.
 ```
 
 Then execute the below commands:
