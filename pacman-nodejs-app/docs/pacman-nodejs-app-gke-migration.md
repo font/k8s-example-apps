@@ -374,7 +374,6 @@ To perform this migration, the tool makes the following assumptions:
 4. Both clusters are making use of Google Cloud DNS to manage DNS entries. [See here for more details](https://cloud.google.com/dns/migrating).
 5. Google Cloud DNS managed zone is already created in your Google Cloud Platform project.
    [See here for instructions](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone).
-6. DNS
 6. `gcloud` cloud SDK is installed and working on client to access both clusters. [See here for instructions](https://cloud.google.com/sdk/).
 7. `kubectl` is installed and configured to access both clusters using the provided contexts.
 8. `jq` is installed on the host machine that will be executing `kmt`. [See here for installation instructions](https://github.com/stedolan/jq/wiki/Installation).
