@@ -176,8 +176,6 @@ Verify the containers have been created and are in the running state:
 kubectl get pods -o wide --watch
 ```
 
-Once the pacman pods are running and the `pacman` service has an IP address, open up your browser and try to access it via `http://<EXTERNAL_IP>/`.
-
 #### Save Pac-Man Load Balancer IP
 
 ```bash
@@ -200,6 +198,16 @@ gcloud dns record-sets transaction start -z=${ZONE_NAME}
 gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
+
+## Play Pac-Man
+
+Go ahead and play a few rounds of Pac-Man and invite your friends and colleagues by giving them your FQDN to your Pac-Man application
+e.g. [http://pacman.example.com/](http://pacman.example.com/) (replace `example.com` with your DNS name).
+
+The `Zone:` field at the top represents the zone you're game is running in. When you save your score, it will automatically save the
+zone you were playing in and display it in the High Score list.
+
+See who can get the highest score!
 
 ## Migrate Pac-Man Application to Cluster B (Manually)
 
