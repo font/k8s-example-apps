@@ -114,7 +114,7 @@ function validate_zone_name {
 }
 
 function validate_dns_name {
-    dname=$(gcloud dns managed-zones list --filter='name = ifontlabs' --format json | jq -r '.[0].dnsName')
+    dname=$(gcloud dns managed-zones list --filter="name = ${ZONE_NAME}" --format json | jq -r '.[0].dnsName')
 
     if [[ ${dname} != ${DNS_NAME} ]]; then
         echo "Error: invalid DNS name '${DNS_NAME}'"

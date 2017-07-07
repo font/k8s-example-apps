@@ -33,10 +33,10 @@ Short options:
 Long options:
 
 ```bash
-./kmt.sh --verbose --from-context gke_ifontlabs_us-west1-b_gce-us-west1 \
-                   --to-context gke_ifontlabs_us-central1-b_gce-us-central1 \
+./kmt.sh --verbose --from-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+                   --to-context gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
                    --namespace pacman \
-                   --zone ifontlabs \
-                   --dns ifontlabs.com.
+                   --zone ZONENAME \
+                   --dns example.com.
 ```
 
