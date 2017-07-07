@@ -96,18 +96,18 @@ with the rest of the guides.
 sed -i 's/ifontlabs/YOUR_PROJECT_ID/' deployments/pacman-deployment*.yaml
 ```
 
-## Set Up Kubernetes Cluster(s)
+## Kubernetes Cluster Use-Cases
 
-You'll need to create 1 or at least 3 Kubernetes cluster(s) depending on whether you want to try out the Pac-Man app on 1 cluster,
-or try it out on a federated cluster. Below are links that will guide you through it:
+You'll need to create 1 to at least 3 Kubernetes cluster(s) depending on whether you want to try out the Pac-Man app on 1 cluster,
+or try it out on multiple clusters. Below are links that will guide you through it.
 
 ### Single Kubernetes Cluster
 
 - [Pac-Man Node.js App Single Cluster](docs/pacman-nodejs-app-single-cluster.md)
 
-### Federated Kubernetes Cluster Scenarios
+### Federated Kubernetes Cluster Use-Cases
 
-Follow the instructions in the below links to test out different federation scenarios.
+Follow the instructions in the below links to test out different federation use-cases.
 
 - [Pac-Man application deployed on GKE k8s federated cluster](docs/pacman-nodejs-app-federated-gke.md)
 - [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-gke-scale.md)
@@ -117,9 +117,14 @@ Follow the instructions in the below links to test out different federation scen
 - [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-portability.md)
 - [Pac-Man application deployed on AWS federation, then scaled to GKE, then migrated to GKE](docs/pacman-nodejs-app-federated-aws-gke-scale-migrate.md)
 
-## Kubernetes Federation Issues
+#### Kubernetes Federation Issues
 
 Below is a link to some of the known Kubernetes Federation issues that prevents any given Pac-Man federated Kubernetes cluster scnearios above from fully functioning
 as intended.
 
 [Kubernetes Federation Issues](docs/kubernetes-federation-issues.md)
+
+### Kubernetes Cluster Use-Cases (Without Federation)
+
+- [Pac-Man application migration using GKE](docs/pacman-nodejs-app-gke-migration.md)
+
