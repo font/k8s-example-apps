@@ -4,57 +4,73 @@
 #
 #
 #
-set -ex
+set -e
 
 function usage {
-    echo "$0: [-f|--from-context CONTEXT] [-t|--to-context CONTEXT] [-n|--namespace NAMESPACE] [-z|--zone ZONE_NAME] [-d|--dns DNS_NAME]"
+    echo "$0: [OPTIONS] [-f|--from-context CONTEXT] [-t|--to-context CONTEXT] [-n|--namespace NAMESPACE] [-z|--zone ZONE_NAME] [-d|--dns DNS_NAME]"
+    echo "  Optional Arguments:"
+    echo "    -h, --help             Display this usage"
+    echo "    -v, --verbose          Increase verbosity for debugging"
+    echo "  Required arguments:"
     echo "    -f, --from-context     source CONTEXT to migrate application"
     echo "    -t, --to-context       destination CONTEXT to migration application"
     echo "    -n, --namespace        namespace containing Kubernetes resources to migrate"
     echo "    -z, --zone             name of zone for your Google Cloud DNS e.g. zonename"
-    echo "    -d, --dns              domain name used for your Google Cloud DNS zone e.g. example.com."
+    echo "    -d, --dns              domain name used for your Google Cloud DNS zone e.g. 'example.com.'"
 }
 
 function parse_args {
-    arg_count=0
+    req_arg_count=0
+
+    if [[ ${1} == '-h' || ${1} == '--help' ]]; then
+        usage
+        exit 1
+    fi
 
     while [[ $# -gt 1 ]]; do
         case "${1}" in
             -f|--from-context)
                 SRC_CONTEXT="${2}"
+                (( req_arg_count += 1 ))
                 shift
                 ;;
             -t|--to-context)
                 DST_CONTEXT="${2}"
+                (( req_arg_count += 1 ))
                 shift
                 ;;
             -n|--namespace)
                 NAMESPACE="${2}"
+                (( req_arg_count += 1 ))
                 shift
                 ;;
             -z|--zone)
                 ZONE_NAME="${2}"
+                (( req_arg_count += 1 ))
                 shift
                 ;;
             -d|--dns)
                 DNS_NAME="${2}"
+                (( req_arg_count += 1 ))
                 shift
+                ;;
+            -v|--verbose)
+                set -x
                 ;;
             -h|--help)
                 usage
                 exit 1
                 ;;
             *)
-                echo "Error: invalid argument ${arg}"
+                echo "Error: invalid argument '${arg}'"
                 usage
                 exit 1
                 ;;
         esac
         shift
-        (( arg_count += 1 ))
     done
 
-    if [[ ${arg_count} -ne 5 ]]; then
+    if [[ ${req_arg_count} -ne 5 ]]; then
         echo "Error: missing required arguments"
         usage
         exit 1
@@ -64,13 +80,13 @@ function parse_args {
 
 function validate_contexts {
     if ! $(kubectl config get-contexts -o name | grep ${SRC_CONTEXT} &> /dev/null); then
-        echo "Error: source context ${SRC_CONTEXT} is not valid. Please check the context name and try again."
+        echo "Error: source context '${SRC_CONTEXT}' is not valid. Please check the context name and try again."
         usage
         exit 1
     fi
 
     if ! $(kubectl config get-contexts -o name | grep ${DST_CONTEXT} &> /dev/null); then
-        echo "Error: destination context ${DST_CONTEXT} is not valid. Please check the context name and try again."
+        echo "Error: destination context '${DST_CONTEXT}' is not valid. Please check the context name and try again."
         usage
         exit 1
     fi
@@ -81,7 +97,7 @@ function validate_namespace {
     kubectl config use-context ${SRC_CONTEXT}
 
     if ! $(kubectl get namespace ${NAMESPACE} &> /dev/null); then
-        echo "Error: invalid namespace ${NAMESPACE}"
+        echo "Error: invalid namespace '${NAMESPACE}'"
         usage
         exit 1
     fi
@@ -91,7 +107,7 @@ function validate_zone_name {
     zname=$(gcloud dns managed-zones list --filter="name = ${ZONE_NAME}" --format json | jq -r '.[0].name')
 
     if [[ ${zname} != ${ZONE_NAME} ]]; then
-        echo "Error: invalid zone name ${ZONE_NAME}"
+        echo "Error: invalid zone name '${ZONE_NAME}'"
         usage
         exit 1
     fi
@@ -101,7 +117,7 @@ function validate_dns_name {
     dname=$(gcloud dns managed-zones list --filter='name = ifontlabs' --format json | jq -r '.[0].dnsName')
 
     if [[ ${dname} != ${DNS_NAME} ]]; then
-        echo "Error: invalid DNS name ${DNS_NAME}"
+        echo "Error: invalid DNS name '${DNS_NAME}'"
         usage
         exit 1
     fi
@@ -189,6 +205,8 @@ function verify_services_ready {
     local timeout=120 # wait no more than 2 minutes
     local services=$(jq -r '(. + select(.kind == "Service") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
 
+    echo -n "Waiting for services [$(echo ${services})]......"
+
     # Loop until all services have a load balancer IP address
     local all_ready=false
     while [[ ${all_ready} == false && ${timeout} -gt 0 ]]; do
@@ -210,7 +228,7 @@ function verify_services_ready {
     done
 
     if [[ ${all_ready} == true ]]; then
-        echo "All services ready"
+        echo "READY"
         # Save off public IP addresses for services in destination cluster
         for s in ${services}; do
             eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -223,6 +241,8 @@ function verify_services_ready {
 function verify_deployments_ready {
     local timeout=120 # wait no more than 2 minutes
     local deployments=$(jq -r '(. + select(.kind == "Deployment") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
+
+    echo -n "Waiting for deployments [$(echo ${deployments})]......"
 
     # Loop until all deployments have the correct number of replicas running
     local all_ready=false
@@ -246,7 +266,7 @@ function verify_deployments_ready {
     done
 
     if [[ ${all_ready} == true ]]; then
-        echo "All deployments ready"
+        echo "READY"
     elif [[ ${timeout} -le 0 ]]; then
         echo "WARNING: timeout waiting for deployments ${deployments}"
     fi
@@ -268,7 +288,7 @@ function exec_app_recipe {
 }
 
 function migrate_resources {
-    echo "Migrating ${NAMESPACE} namespace from cluster ${SRC_CLUSTER} to ${DST_CLUSTER}..."
+    echo "Migrating ${NAMESPACE} namespace from cluster ${SRC_CONTEXT} to ${DST_CONTEXT}..."
     save_src_cluster_resources
     create_dst_cluster_resources
     sleep 10 # Give it a bit before attempting to verify

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -ex
+set -e
 
 function add_new_mongo_instance {
     MONGO_SRC_POD=$(kubectl --context ${SRC_CONTEXT} get pod \
