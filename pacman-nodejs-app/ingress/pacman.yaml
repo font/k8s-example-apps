@@ -1,0 +1,10 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: pacman-ingress
+  name: pacman
+spec:
+  backend:
+    serviceName: pacman
+    servicePort: 80
