@@ -181,6 +181,13 @@ mongo.default.federation.svc.example.com. 0 IN A 104.196.244.89
 ;; MSG SIZE  rcvd: 239
 ```
 
+## Federation Required From Beginning
+
+In order to use the features of Kubernetes Federation, one has to start with Kubernetes Federation. That is, as of this writing, you cannot seem to
+start with a cluster or multiple clusters and then later decide that you want to federate them. For example, when you deploy the federation control
+plane, it does not query the state of the cluster(s) to determine what resources are already deployed to manage through the federation. Instead, you
+have to have started and deployed all of your applications through the federation control plane in order to federate them later. This seems like a
+feature of federation that is missing in order to allow existing customers not using federation to later adopt it.
 
 ## AWS Dynamic DNS was not updated in DNS
 
