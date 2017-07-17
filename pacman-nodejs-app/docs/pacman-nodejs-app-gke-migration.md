@@ -421,5 +421,5 @@ kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
 
 ### Remove Kubernetes Clusters
 
-Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
+Follow [these instructions](ttps://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
 to delete the 2 GKE clusters in us-west and us-central.
