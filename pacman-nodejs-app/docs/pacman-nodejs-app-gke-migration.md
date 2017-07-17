@@ -297,7 +297,7 @@ All resources are ready and available after all pods are in the `RUNNING` state 
 Also when all services show an `EXTERNAL-IP`.
 
 ```bash
-kubectl get all -o wide -w
+kubectl get all -o wide
 ```
 
 ### Save Pac-Man and MongoDB Load Balancer IP
