@@ -19,7 +19,7 @@ Follow these steps to [push the Pac-Man container image to your Google Cloud Con
 
 ## Create Kubernetes Clusters
 
-Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
+Follow [these instructions](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
 to create 2 GKE Kubernetes clusters in 2 separate regions. This tutorial will use us-west and us-central so if you use different regions
 then modify the commands appropriately.
 
