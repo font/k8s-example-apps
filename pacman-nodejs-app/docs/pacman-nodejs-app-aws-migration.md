@@ -25,7 +25,7 @@ And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-no
 ## Configure DNS
 
 The kops tool requires a place to build the necessary DNS records in order to build a Kubernetes cluster. There are several scenarios available that you can choose from but in this instance, because we are migrating to a GKE cluster, we will use scenario 3 as outlined [here](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar). Create the subdomain with a different name than the one you would ultimately like to use as the public address for your application (ex. aws.example.com)
-For this particular case, I have been using Google's Cloud DNS configuration with a custom subdomain. This is Scenario 3 in the above link. This basically involves installing jq and then running the below command replacing subdomain.example.com with your chosen subdomain. This same subdomain will be used later as part of the cluster name. 
+ 
 Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/update-name-servers)
 #Make sure to[ test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.
 
