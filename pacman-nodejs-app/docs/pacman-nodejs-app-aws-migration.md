@@ -18,9 +18,17 @@ Follow these steps to [create the Pac-Man application container image](../README
 Follow these steps to [push the Pac-Man container image to your Google Cloud Container Registry](../README.md#kubernetes-components).
 
 ## Setup Your AWS cluster
-Follow these steps to set up kops, your aws client 
+Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops,
+And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
 
-## Create Kubernetes Clusters
+
+## Configure DNS
+
+The kops tool requires a place to build the necessary DNS records in order to build a Kubernetes cluster. There are several scenarios available that you can choose from but in this instance, because we are migrating to a GKE cluster, we will use scenario 3 as outlined [here](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar). Create the subdomain with a different name than the one you would ultimately like to use as the public address for your application (ex. aws.example.com)
+For this particular case, I have been using Google's Cloud DNS configuration with a custom subdomain. This is Scenario 3 in the above link. This basically involves installing jq and then running the below command replacing subdomain.example.com with your chosen subdomain. This same subdomain will be used later as part of the cluster name. 
+Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/update-name-servers)
+#Make sure to[ test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.
+
 
 Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
 to create 2 GKE Kubernetes clusters in 2 separate regions. This tutorial will use us-west and us-central so if you use different regions
