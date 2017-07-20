@@ -19,7 +19,7 @@ Follow these steps to [push the Pac-Man container image to your Google Cloud Con
 
 ## Create Kubernetes Clusters
 
-Follow [these instructions](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
+Follow [these instructions](kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
 to create 2 GKE Kubernetes clusters in 2 separate regions. This tutorial will use us-west and us-central so if you use different regions
 then modify the commands appropriately.
 
@@ -421,5 +421,5 @@ kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
 
 ### Remove Kubernetes Clusters
 
-Follow [these instructions](ttps://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
+Follow [these instructions](kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
 to delete the 2 GKE clusters in us-west and us-central.
