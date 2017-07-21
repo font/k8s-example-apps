@@ -18,7 +18,8 @@ Follow these steps to [create the Pac-Man application container image](../README
 Follow these steps to [push the Pac-Man container image to your Google Cloud Container Registry](../README.md#kubernetes-components).
 
 ## Setup Your AWS cluster
-Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops,
+Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops
+
 And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
 
 
