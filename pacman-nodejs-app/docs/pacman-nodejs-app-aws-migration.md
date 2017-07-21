@@ -27,11 +27,10 @@ And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-no
 The kops tool requires a place to build the necessary DNS records in order to build a Kubernetes cluster. There are several scenarios available that you can choose from but in this instance, because we are using google cloud platform to manage our DNS and are migrating to a GKE cluster, we will use scenario 3 as outlined [here](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar). Create the subdomain with a different name than the one you would ultimately like to use as the public facing address for your application (ex. aws.example.com)
  
 Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/update-name-servers)
-####Make sure to[ test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.
-
+**Make sure to[ test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.*
 
 Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
-to create 2 GKE Kubernetes clusters in 2 separate regions. This tutorial will use us-west and us-central so if you use different regions
+to create 1 GKE Kubernetes clusters in 1 region. This tutorial will use us-west so if you use a different region
 then modify the commands appropriately.
 
 ### Store the GCP Project Name
@@ -40,12 +39,11 @@ then modify the commands appropriately.
 export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 ```
 
-## Setup Pac-Man Application On Cluster A
+## Setup Pac-Man Application On AWS Cluster
 
-### Use US West Cluster Context
 
 ```bash
-kubectl config use-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1
+kubectl config use-context  subdomain.example.com
 ```
 
 ### Create and Use pacman Namespace
@@ -55,7 +53,7 @@ kubectl create namespace pacman
 ```
 
 ```bash
-kubectl config set-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 --namespace pacman
+kubectl config set-context subdomain.example.com --namespace pacman
 ```
 
 ### Create MongoDB Resources
@@ -82,7 +80,7 @@ This component creates a mongo DNS entry, so this is why we use `mongo` as the h
 kubectl create -f services/mongo-service.yaml
 ```
 
-Wait until the mongo service has the external IP address listed:
+Wait until the mongo service has the external IP address (aws uses a dynamic DNS address) listed:
 
 ```bash
 kubectl get svc mongo -o wide --watch
@@ -113,20 +111,19 @@ kubectl get pods -o wide --watch
 #### Save MongoDB Load Balancer IP
 
 ```bash
-MONGO_SRC_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
+MONGO_SRC_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 ```
 
 #### Create the MongoDB Replication Set
 
 We'll have to bootstrap the MongoDB instance since we're using a replication set. For this,
-we need to run the following command on the MongoDB instance you want to designate as the primary (master). For our example,
-we're using the us-west1-b instance:
+we need to run the following command on the MongoDB instance you want to designate as the primary (master):
 
 ```bash
-MONGO_SRC_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
+MONGO_SRC_POD=$(kubectl --context=subdomain.example.com get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+kubectl --context=subdomain.example.com \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.initiate({
                     '_id' : 'rs0',
@@ -142,7 +139,7 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 Check the status until this instance shows as `PRIMARY`:
 
 ```
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+kubectl --context=subdomain.example.com \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.status()"
 ```
@@ -190,7 +187,8 @@ kubectl get pods -o wide --watch
 #### Save Pac-Man Load Balancer IP
 
 ```bash
-PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].ip}")
+PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+
 ```
 
 #### Add DNS A record
@@ -206,7 +204,7 @@ Then execute the below commands:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
