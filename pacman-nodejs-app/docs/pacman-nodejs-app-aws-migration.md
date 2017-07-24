@@ -31,7 +31,7 @@ Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/
 
 **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
 
-Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
+Follow [these instructions](http://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
 to create 1 GKE Kubernetes clusters in 1 region. This tutorial will use us-west so if you use a different region
 then modify the commands appropriately.
 
