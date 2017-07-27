@@ -284,7 +284,7 @@ Then execute the below commands:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}."
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
