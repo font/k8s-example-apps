@@ -267,7 +267,7 @@ kubectl get pods -o wide --watch
 #### Save Pac-Man Load Balancer IP
 
 ```bash
-PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].hostname}".)
 
 ```
 
@@ -284,7 +284,7 @@ Then execute the below commands:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}."
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
@@ -355,7 +355,7 @@ done
 We will be migrating to our US Central region:
 
 ```bash
-kubectl config use-context gke_${GCP_PROJECT}_us-central1-b_gce-us-central1
+kubectl config use-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1
 ```
 
 ### Create and Use the pacman Namespace
@@ -369,7 +369,7 @@ kubectl create -f pacman-ns-dump/ns.json
 Set the namespace of the context:
 
 ```bash
-kubectl config set-context gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 --namespace pacman
+kubectl config set-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 --namespace pacman
 ```
 
 ### Create Pac-Man Kubernetes Resources
@@ -401,7 +401,7 @@ MONGO_DST_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBala
 Connect to the mongo pod in cluster A and invoke the mongo client to connect to the mongodb PRIMARY in order to add the new mongo instance as a replica set SECONDARY.
 
 ```bash
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+kubectl --context=subdomain.example.com \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_IP}:27017\")"
 ```
@@ -409,7 +409,7 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 ### Check Status of New Mongo Instance In Replica Set
 
 ```bash
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+kubectl --context=subdomain.example.com  \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.status()"
 ```
@@ -417,7 +417,7 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 ### Make New Mongo Instance Primary
 
 ```bash
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+kubectl --context=subdomain.example.com \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.stepDown(120)"
 ```
@@ -428,7 +428,7 @@ Update DNS to point to new cluster:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
 gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
@@ -436,10 +436,10 @@ gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ### Remove Old Mongo Instance From Replica Set
 
 ```bash
-MONGO_DST_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 get pod \
+MONGO_DST_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
     exec -it ${MONGO_DST_POD} -- \
     mongo --eval "rs.remove(\"${MONGO_SRC_PUBLIC_IP}:27017\")"
 ```
@@ -447,7 +447,7 @@ kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
 ### Check Status to Verify Removal
 
 ```bash
-kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
     exec -it ${MONGO_DST_POD} -- \
     mongo --eval "rs.status()"
 ```
@@ -455,9 +455,27 @@ kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
 ### Remove Old Pac-man Cluster Resources
 
 ```bash
-kubectl --context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
+kubectl --context subdomain.example.com \
     delete ns pacman
 ```
+
+## Cleanup AWS Cluster
+
+Cleanup is rather easy by running the below commands. You may want to run the `kops delete cluster` command first
+without the `--yes` option to preview the changes before committing them.
+
+### Delete Cluster
+
+```
+kops delete cluster --name ${AWS_CLUSTER_NAME} --yes
+```
+
+### Delete S3 Bucket
+
+```
+aws s3api delete-bucket --bucket prefix-example-com-state-store
+```
+
 
 ## Migrate Pac-Man Application to Cluster B (Automated)
 
