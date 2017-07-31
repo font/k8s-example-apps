@@ -386,20 +386,19 @@ To perform this migration, the tool makes the following assumptions:
 
 1. AWS is used for cluster A and GKE is used for cluster B.
 2. Pac-Man is already deployed and working in cluster A. See above for steps.
-3. GKE clusters are using the same Google Cloud Platform project ID.
-4. Both clusters are making use of Google Cloud DNS to manage DNS entries. [See here for more details](https://cloud.google.com/dns/migrating).
-5. Google Cloud DNS managed zone is already created in your Google Cloud Platform project.
+3. Both clusters are making use of Google Cloud DNS to manage DNS entries. [See here for more details](https://cloud.google.com/dns/migrating).
+4. Google Cloud DNS managed zone is already created in your Google Cloud Platform project.
    [See here for instructions](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone).
-6. `gcloud` cloud SDK is installed and working on client to access both clusters. [See here for instructions](https://cloud.google.com/sdk/).
+5. `gcloud` cloud SDK is installed and working on client to create gke clusters. [See here for instructions](https://cloud.google.com/sdk/).
 7. `kubectl` is installed and configured to access both clusters using the provided contexts.
 8. `jq` is installed on the host machine that will be executing `kmt`. [See here for installation instructions](https://github.com/stedolan/jq/wiki/Installation).
 
-Execute the following command to migrate Pac-Man from the GKE cluster in the us-west1-b region to the cluster in the us-central1-b region.
+Execute the following command to migrate Pac-Man from the AWS cluster to the GKE cluster in the us-west1-b region.
 
 ```bash
 cd tools/migrate
-./kmt.sh -f gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
-    -t gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+./kmt.sh -f subdomain.example.com \
+    -t gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
     -n pacman \
     -z ${ZONE_NAME} \
     -d ${DNS_NAME} &> kmt.log
