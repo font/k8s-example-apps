@@ -11,11 +11,6 @@ Follow [these steps](https://github.com/kubernetes/kops#installing) to install k
 
 And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
 
-
-## Setup Your GKE cluster (Cluster B)
-Create one GKE cluster in one region (ex US-west1) following [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#gce-us-west1). This tutorial will be using the us-west1 region.
-
-
 ## Configure DNS
 
 The kops tool requires a place to build the necessary DNS records in order to build a Kubernetes cluster. There are several scenarios available that you can choose from but in this instance, because we are using google cloud platform to manage our DNS and are migrating to a GKE cluster, we will use scenario 3 as outlined [here](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar). Create the subdomain with a different name than the one you would ultimately like to use as the public facing address for your application (ex. aws.example.com)
@@ -29,81 +24,12 @@ Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/
 We need to create a dedicated S3 bucket for `kops` to manage the state of your cluster. [See here for details](https://github.com/kubernetes/kops/blob/master/docs/aws.md#cluster-state-storage).
 
 ## Create the Kubernetes Cluster
+Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
 
-#### Setup Environment Variables
-
-To make this process easier, let's setup a couple environment variables to facilitate copying and pasting from this guide.
-
-Since we used a **SUBDOMAIN** for our DNS configuration above, we will re-use the name below. That is, the `AWS_CLUSTER_NAME` needs to contain
-the same **SUBDOMAIN** value used in the `aws route53 create-hosted-zone --name subdomain.example.com` command above so replace `subdomain.example.com`
-with your subdomain.
-
-The `KOPS_STATE_STORE` variable will be automatically picked up by `kops` so we do not need to continually specify it using
-the `--state` parameters.
-
-```bash
-export AWS_CLUSTER_NAME=us-east-1.subdomain.example.com
-export KOPS_STATE_STORE=s3://prefix-example-com-state-store
-```
-
-#### Create Cluster Configuration
-
-We need to specify a zone for the cluster. For this, we need to know which availability zones are available to us.
-For this example we will be deploying our cluster to the us-east-1a region.
-
-```
-aws ec2 describe-availability-zones --region us-east-1
-```
-
-Create the cluster configuration using the example command below. This only creates the cluster configuration but does not start building it.
-
-```
-kops create cluster --name ${AWS_CLUSTER_NAME} \
-    --zones us-east-1a \
-    --kubernetes-version 1.6.4
-```
-
-There are several other options you can specify e.g. `--node-count`, `--node-size`, `--master-size`, etc.
-See the [list of commands](https://github.com/kubernetes/kops/blob/master/docs/commands.md#other-interesting-modes) for more information.
-
-#### Edit Cluster Configuration
-
-Now that we have a cluster configuration, we can modify any of its details using the edit command below that will open your editor defined by
-the `EDITOR` environment variable. The configuration is read and automatically saved to the S3 bucket we created earlier when you save and exit
-the editor.
-
-```
-kops edit cluster --name ${AWS_CLUSTER_NAME}
-```
-
-#### Build the Cluster
-
-Now we're ready to build the cluster. This will take a while and once it's complete, you'll still have to wait longer while the booted instances
-finish downloading the Kubernetes components and reach a ready state. The `--yes` option is required to actually build the cluster, otherwise `kops`
-will dump a list of cloud resources it will create without applying any changes.
-
-```
-kops update cluster --name ${AWS_CLUSTER_NAME} --yes
-```
-
-#### Verify the Cluster
-
-`kops` will automatically update your `kubectl` config with the context details to connect to your cluster. Verify the cluster
-using:
-
-```
-kubectl get nodes
-kubectl --namespace kube-system get all -o wide
-```
-
-`kops` also has a command to validate the cluster is working correctly:
-
-```
-kops validate cluster --name ${AWS_CLUSTER_NAME}
-```
+## Setup Your GKE cluster (Cluster B)
 
 Follow [these instructions](http://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
-to create 1 GKE Kubernetes clusters in 1 region. This tutorial will use us-west so if you use a different region
+to create 1 GKE Kubernetes cluster in 1 region. This tutorial will use us-west so if you use a different region
 then modify the commands appropriately.
 
 ### Store the GCP Project Name
