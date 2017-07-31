@@ -1,26 +1,19 @@
 # Pac-Man AWS GKE Migration
 
-This tutorial walks you through the steps to perform a Pac-Man migration from an AWS cluster A to a GKE cluster B using GKE for hosting. The tutorial documents the steps
+This tutorial walks you through the steps to perform a Pac-Man migration from an AWS cluster A to a GKE cluster B using GKE to manage DNS. The tutorial documents the steps
 required to set up cluster A, and documents how to migrate it to cluster B manually or using the automated `kmt` proof-of-concept tool.
 
 ## Prerequisites
+If you have not already done so, follow [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/README.md#prerequisites) to Clone the required repository, create the Pac-Man container image, set up Google Cloud SDK and push the container image.
 
-#### Clone the repository
-
-Follow these steps to [clone the repository](../README.md#clone-this-repository).
-
-#### Create the Pac-Man Container Image
-
-Follow these steps to [create the Pac-Man application container image](../README.md#create-application-container-image).
-
-#### Set up Google Cloud SDK and Push Container Image
-
-Follow these steps to [push the Pac-Man container image to your Google Cloud Container Registry](../README.md#kubernetes-components).
-
-## Setup Your AWS cluster
+## Setup Your AWS cluster (Cluster A)
 Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops
 
 And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
+
+
+## Setup Your GKE cluster (Cluster B)
+Create one GKE cluster in one region (ex US-west1) following [these](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#gce-us-west1). This tutorial will be using the us-west1 region.
 
 
 ## Configure DNS
@@ -191,7 +184,7 @@ kubectl get pods -o wide --watch
 #### Save MongoDB Load Balancer IP
 
 ```bash
-MONGO_SRC_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].hostname}")
+MONGO_SRC_PUBLIC_HOSTNAME=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].hostname}")
 ```
 
 #### Create the MongoDB Replication Set
@@ -210,7 +203,7 @@ kubectl --context=subdomain.example.com \
                     'members' : [
                         {
                             '_id' : 0,
-                            'host' : \"${MONGO_SRC_PUBLIC_IP}:27017\"
+                            'host' : \"${MONGO_SRC_PUBLIC_HOSTNAME}:27017\"
                         }
                     ]
                 })"
@@ -267,11 +260,11 @@ kubectl get pods -o wide --watch
 #### Save Pac-Man Load Balancer IP
 
 ```bash
-PACMAN_SRC_PUBLIC_IP=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].hostname}".)
+PACMAN_SRC_PUBLIC_HOSTNAME=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].hostname}".)
 
 ```
 
-#### Add DNS A record
+#### Add DNS CNAME record
 
 Set the value of your `ZONE_NAME` and `DNS_NAME` name used for your Google Cloud DNS configuration.
 
@@ -284,7 +277,7 @@ Then execute the below commands:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_HOSTNAME}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
@@ -352,7 +345,7 @@ done
 
 ### Switch Contexts to Cluster B (Destination)
 
-We will be migrating to our US Central region:
+We will be migrating to our US West region:
 
 ```bash
 kubectl config use-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1
@@ -428,7 +421,7 @@ Update DNS to point to new cluster:
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
-gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+gcloud dns record-sets transaction remove -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_SRC_PUBLIC_HOSTNAME}"
 gcloud dns record-sets transaction add -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
@@ -441,7 +434,7 @@ MONGO_DST_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get
     --output=jsonpath='{.items..metadata.name}')
 kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
     exec -it ${MONGO_DST_POD} -- \
-    mongo --eval "rs.remove(\"${MONGO_SRC_PUBLIC_IP}:27017\")"
+    mongo --eval "rs.remove(\"${MONGO_SRC_PUBLIC_HOSTNAME}:27017\")"
 ```
 
 ### Check Status to Verify Removal
@@ -459,33 +452,15 @@ kubectl --context subdomain.example.com \
     delete ns pacman
 ```
 
-## Cleanup AWS Cluster
-
-Cleanup is rather easy by running the below commands. You may want to run the `kops delete cluster` command first
-without the `--yes` option to preview the changes before committing them.
-
-### Delete Cluster
-
-```
-kops delete cluster --name ${AWS_CLUSTER_NAME} --yes
-```
-
-### Delete S3 Bucket
-
-```
-aws s3api delete-bucket --bucket prefix-example-com-state-store
-```
-
-
 ## Migrate Pac-Man Application to Cluster B (Automated)
 
 ### Prerequisites
 
 To perform this migration, the tool makes the following assumptions:
 
-1. GKE is used for both cluster A and cluster B.
+1. AWS is used for cluster A and GKE is used for cluster B.
 2. Pac-Man is already deployed and working in cluster A. See above for steps.
-3. Both clusters are using the same Google Cloud Platform project ID.
+3. GKE clusters are using the same Google Cloud Platform project ID.
 4. Both clusters are making use of Google Cloud DNS to manage DNS entries. [See here for more details](https://cloud.google.com/dns/migrating).
 5. Google Cloud DNS managed zone is already created in your Google Cloud Platform project.
    [See here for instructions](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone).
@@ -514,6 +489,12 @@ See [here for more details](../tools/migrate) about using the `kmt` tool.
 
 ## Cleanup
 
+## Cleanup AWS Cluster
+
+Follow [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#cleanup) to clean up your aws cluster.
+
+## Cleanup Pac-Man Namespace
+
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
 gcloud dns record-sets transaction remove -z=${ZONE_NAME} \
@@ -529,4 +510,4 @@ kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
 ### Remove Kubernetes Clusters
 
 Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
-to delete the 2 GKE clusters in us-west and us-central.
+to delete the GKE cluster in us-west.
