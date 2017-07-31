@@ -1,4 +1,4 @@
-# Pac-Man AWS Migration
+# Pac-Man AWS GKE Migration
 
 This tutorial walks you through the steps to perform a Pac-Man migration from an AWS cluster A to a GKE cluster B using GKE for hosting. The tutorial documents the steps
 required to set up cluster A, and documents how to migrate it to cluster B manually or using the automated `kmt` proof-of-concept tool.
