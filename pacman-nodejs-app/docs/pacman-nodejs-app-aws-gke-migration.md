@@ -14,6 +14,13 @@ And [these steps](kubernetes-cluster-aws.md#setup-your-aws-environment) to setup
 ## Configure DNS
 
 The kops tool requires a place to build the necessary DNS records in order to build a Kubernetes cluster. There are several scenarios available that you can choose from but in this instance, because we are using google cloud platform to manage our DNS and are migrating to a GKE cluster, we will use scenario 3 as outlined [here](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar). Create the subdomain with a different name than the one you would ultimately like to use as the public facing address for your application (ex. aws.example.com)
+
+Since we will be using this subdomain extensively in this tutorial, we will store it in an environment variable for ease
+
+```bash
+export SUBDOMAIN=subdomain.example.com
+```
+
  
 Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/update-name-servers)
 
@@ -42,7 +49,7 @@ export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 
 
 ```bash
-kubectl config use-context  subdomain.example.com
+kubectl config use-context ${SUBDOMAIN}
 ```
 
 ### Create and Use pacman Namespace
@@ -52,7 +59,7 @@ kubectl create namespace pacman
 ```
 
 ```bash
-kubectl config set-context subdomain.example.com --namespace pacman
+kubectl config set-context ${SUBDOMAIN} --namespace pacman
 ```
 
 ### Create MongoDB Resources
@@ -119,10 +126,10 @@ We'll have to bootstrap the MongoDB instance since we're using a replication set
 we need to run the following command on the MongoDB instance you want to designate as the primary (master):
 
 ```bash
-MONGO_SRC_POD=$(kubectl --context=subdomain.example.com get pod \
+MONGO_SRC_POD=$(kubectl --context=${SUBDOMAIN} get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=subdomain.example.com \
+kubectl --context=${SUBDOMAIN} \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.initiate({
                     '_id' : 'rs0',
@@ -138,7 +145,7 @@ kubectl --context=subdomain.example.com \
 Check the status until this instance shows as `PRIMARY`:
 
 ```
-kubectl --context=subdomain.example.com \
+kubectl --context=${SUBDOMAIN} \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.status()"
 ```
@@ -320,7 +327,7 @@ MONGO_DST_PUBLIC_IP=$(kubectl get svc mongo --output jsonpath="{.status.loadBala
 Connect to the mongo pod in cluster A and invoke the mongo client to connect to the mongodb PRIMARY in order to add the new mongo instance as a replica set SECONDARY.
 
 ```bash
-kubectl --context=subdomain.example.com \
+kubectl --context=${SUBDOMAIN} \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_IP}:27017\")"
 ```
@@ -328,7 +335,7 @@ kubectl --context=subdomain.example.com \
 ### Check Status of New Mongo Instance In Replica Set
 
 ```bash
-kubectl --context=subdomain.example.com  \
+kubectl --context=${SUBDOMAIN} \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.status()"
 ```
@@ -336,7 +343,7 @@ kubectl --context=subdomain.example.com  \
 ### Make New Mongo Instance Primary
 
 ```bash
-kubectl --context=subdomain.example.com \
+kubectl --context=${SUBDOMAIN} \
     exec -it ${MONGO_SRC_POD} -- \
     mongo --eval "rs.stepDown(120)"
 ```
@@ -374,7 +381,7 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 ### Remove Old Pac-man Cluster Resources
 
 ```bash
-kubectl --context subdomain.example.com \
+kubectl --context ${SUBDOMAIN} \
     delete ns pacman
 ```
 
@@ -397,7 +404,7 @@ Execute the following command to migrate Pac-Man from the AWS cluster to the GKE
 
 ```bash
 cd tools/migrate
-./kmt.sh -f subdomain.example.com \
+./kmt.sh -f ${SUBDOMAIN} \
     -t gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
     -n pacman \
     -z ${ZONE_NAME} \
