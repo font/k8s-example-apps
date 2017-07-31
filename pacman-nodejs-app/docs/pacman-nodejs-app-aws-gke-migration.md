@@ -4,12 +4,12 @@ This tutorial walks you through the steps to perform a Pac-Man migration from an
 required to set up cluster A, and documents how to migrate it to cluster B manually or using the automated `kmt` proof-of-concept tool.
 
 ## Prerequisites
-If you have not already done so, follow [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/README.md#prerequisites) to Clone the required repository, create the Pac-Man container image, set up Google Cloud SDK and push the container image.
+If you have not already done so, follow [these steps](../README.md#prerequisites) to Clone the required repository, create the Pac-Man container image, set up Google Cloud SDK and push the container image.
 
 ## Setup Your AWS cluster (Cluster A)
 Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops
 
-And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
+And [these steps](kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
 
 ## Configure DNS
 
@@ -24,11 +24,11 @@ Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/
 We need to create a dedicated S3 bucket for `kops` to manage the state of your cluster. [See here for details](https://github.com/kubernetes/kops/blob/master/docs/aws.md#cluster-state-storage).
 
 ## Create the Kubernetes Cluster
-Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
+Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
 
 ## Setup Your GKE cluster (Cluster B)
 
-Follow [these instructions](http://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
+Follow [these instructions](kubernetes-cluster-gke-federation.md#create-the-kubernetes-clusters)
 to create 1 GKE Kubernetes cluster in 1 region. This tutorial will use us-west so if you use a different region
 then modify the commands appropriately.
 
@@ -416,7 +416,7 @@ See [here for more details](../tools/migrate) about using the `kmt` tool.
 
 ## Cleanup AWS Cluster
 
-Follow [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#cleanup) to clean up your aws cluster.
+Follow [these steps](kubernetes-cluster-aws.md#cleanup) to clean up your aws cluster.
 
 ## Cleanup Pac-Man Namespace
 
@@ -434,5 +434,5 @@ kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
 
 ### Remove Kubernetes Clusters
 
-Follow [these instructions](http://localhost:6419/docs/kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
+Follow [these instructions](kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
 to delete the GKE cluster in us-west.
