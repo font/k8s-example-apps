@@ -13,7 +13,7 @@ And [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-no
 
 
 ## Setup Your GKE cluster (Cluster B)
-Create one GKE cluster in one region (ex US-west1) following [these](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#gce-us-west1). This tutorial will be using the us-west1 region.
+Create one GKE cluster in one region (ex US-west1) following [these steps](https://github.com/font/k8s-example-apps/blob/master/pacman-nodejs-app/docs/kubernetes-cluster-gke-federation.md#gce-us-west1). This tutorial will be using the us-west1 region.
 
 
 ## Configure DNS
