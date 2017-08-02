@@ -43,11 +43,34 @@ function set_new_mongo_primary {
         mongo --eval "rs.stepDown(120)" || true
 }
 
+function valid_ip {
+    local ip=$1
+    local rc=1
+
+    if [[ ${ip} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=${IFS}
+        IFS='.'
+        ip=(${ip})
+        IFS=${OIFS}
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255
+            && ${ip[3]} -le 255 ]]
+        rc=$?
+    fi
+
+    return ${rc}
+}
+
+
 # TODO: make DNS management generic enough for all applications
 function update_pacman_dns {
-    gcloud dns record-sets transaction start -z=${ZONE_NAME}
-    gcloud dns record-sets transaction remove -z=${ZONE_NAME} \
-        --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+	if valid_ip ${PACMAN_SRC_PUBLIC_IP} ; then 
+    		gcloud dns record-sets transaction start -z=${ZONE_NAME}
+    		gcloud dns record-sets transaction remove -z=${ZONE_NAME} \
+        	--name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
+	else  gcloud dns record-sets transaction start --zone=${ZONE_NAME}
+		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_IP}" \
+			--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
+	fi
     gcloud dns record-sets transaction add -z=${ZONE_NAME} \
         --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
     gcloud dns record-sets transaction execute -z=${ZONE_NAME}
