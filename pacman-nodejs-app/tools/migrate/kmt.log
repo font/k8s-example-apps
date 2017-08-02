@@ -1,0 +1,14 @@
+Switched to context "aws.jimcurtis.info".
+Migrating pacman namespace from cluster aws.jimcurtis.info to gke_jiji-168714_us-west1-b_gce-us-west1...
+Switched to context "aws.jimcurtis.info".
+SRC IP address =a24dad5b0779411e7a53b0ab839438f6-279661591.us-east-1.elb.amazonaws.com if this is not a hostname consider changing this
+SRC IP address =a24dad5b0779411e7a53b0ab839438f6-279661591.us-east-1.elb.amazonaws.com if this is not a hostname consider changing this
+Switched to context "gke_jiji-168714_us-west1-b_gce-us-west1".
+namespace "pacman" created
+Context "gke_jiji-168714_us-west1-b_gce-us-west1" modified.
+persistentvolumeclaim "mongo-storage" created
+service "mongo" created
+service "pacman" created
+deployment "mongo" created
+deployment "pacman" created
+Waiting for services [mongo pacman]......

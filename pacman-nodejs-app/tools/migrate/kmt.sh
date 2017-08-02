@@ -174,6 +174,13 @@ function save_src_cluster_resources {
     # Save off public IP addresses for services in source cluster
     for s in ${services}; do
         eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
+	src_ip_var=$(echo ${s^^}_SRC_PUBLIC_IP)
+	if [[ ${!src_ip_var} == '' ]]; then
+        	eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        fi
+	src_ip_var=$(echo ${s^^}_SRC_PUBLIC_IP)
+	  echo "SRC IP address =${!src_ip_var} if this is not a hostname consider changing this" 
     done
 }
 
@@ -215,6 +222,11 @@ function verify_services_ready {
         for s in ${services}; do
             # Filter service load balancer IP address
             local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+	    #not sure if this is necessary
+	   # if [[ ${!service_ip} == '' ]]; then
+           #      local  service_ip=$(kubectl get service pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+           # fi
+	   #  echo "IP address = ${!service_ip} if this is not a hostname, consider changing this"  
 
             # If we determine that deployment is not ready, try again.
             if ! valid_ip ${service_ip}; then
@@ -232,7 +244,13 @@ function verify_services_ready {
         # Save off public IP addresses for services in destination cluster
         for s in ${services}; do
             eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-        done
+	    dst_ip_var=$(echo ${s^^}_DST_PUBLIC_IP)
+        	 if [[ ${!dst_ip_var} == '' ]]; then
+                	 ${s^^}_DST_PUBLIC_IP=$(kubectl get service pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+                 fi
+		 dst_ip_var=$(echo ${s^^}_DST_PUBLIC_IP)
+		echo "DST IP address = ${!dst_ip_var} if this is not a hostname consider changing this"  
+    done
     elif [[ ${timeout} -le 0 ]]; then
         echo "WARNING: timeout waiting for services ${services}"
     fi
