@@ -221,14 +221,15 @@ function verify_services_ready {
             # Filter service load balancer IP address
             local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 	    if [[ ${!service_ip} == '' ]]; then
-                 local  service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+                 local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             fi
 
             # If we determine that deployment is not ready, try again.
-            if ! valid_ip ${service_ip}; then
-                all_ready=false
-                break
-            fi
+	    if [[ ${service_ip} == '' ]]; then
+		echo ${service_ip}
+		all_ready=false
+               	break
+       	    fi
         done
 
         (( timeout -= 5 ))
@@ -244,7 +245,7 @@ function verify_services_ready {
 	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
 	    dst_ip_var=$(echo ${s^^}_DST_PUBLIC_IP)
         	 if [[ ${!dst_ip_var} == '' ]]; then
-			 ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+			eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
                  fi
     done
     elif [[ ${timeout} -le 0 ]]; then

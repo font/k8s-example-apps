@@ -9,4 +9,14 @@ service "mongo" created
 service "pacman" created
 deployment "mongo" created
 deployment "pacman" created
-Waiting for services [mongo pacman]......
+Waiting for services [mongo pacman]......READY
+Waiting for deployments [mongo pacman]......READY
+MongoDB shell version v3.4.6
+connecting to: mongodb://127.0.0.1:27017
+MongoDB server version: 3.4.6
+{
+	"ok" : 0,
+	"errmsg" : "Quorum check failed because not enough voting nodes responded; required 2 but only the following 1 voting nodes responded: 35.197.87.206:27017; the following nodes did not respond affirmatively: a1793bd52789911e7aa4c0a9f0debf8a-1022994061.us-east-1.elb.amazonaws.com:27017 failed with HostUnreachable",
+	"code" : 74,
+	"codeName" : "NodeNotFound"
+}
