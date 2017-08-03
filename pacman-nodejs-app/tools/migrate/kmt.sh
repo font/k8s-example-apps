@@ -221,7 +221,7 @@ function verify_services_ready {
             # Filter service load balancer IP address
             local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 	    if [[ ${!service_ip} == '' ]]; then
-                 local  service_ip=$(kubectl get pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+                 local  service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             fi
 
             # If we determine that deployment is not ready, try again.
