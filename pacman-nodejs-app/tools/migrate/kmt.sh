@@ -177,7 +177,7 @@ function save_src_cluster_resources {
 	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
 	src_ip_var=$(echo ${s^^}_SRC_PUBLIC_IP)
 	if [[ ${!src_ip_var} == '' ]]; then
-        	eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        	eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
         fi
     done
 }
@@ -220,10 +220,9 @@ function verify_services_ready {
         for s in ${services}; do
             # Filter service load balancer IP address
             local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-	    #not necessary for now but may be in the future
-	   # if [[ ${!service_ip} == '' ]]; then
-           #      local  service_ip=$(kubectl get service pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-           # fi
+	    if [[ ${!service_ip} == '' ]]; then
+                 local  service_ip=$(kubectl get pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            fi
 
             # If we determine that deployment is not ready, try again.
             if ! valid_ip ${service_ip}; then
@@ -245,7 +244,7 @@ function verify_services_ready {
 	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
 	    dst_ip_var=$(echo ${s^^}_DST_PUBLIC_IP)
         	 if [[ ${!dst_ip_var} == '' ]]; then
-                	 ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} pacman -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+			 ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
                  fi
     done
     elif [[ ${timeout} -le 0 ]]; then
