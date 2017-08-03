@@ -15,15 +15,55 @@ MongoDB shell version v3.4.6
 connecting to: mongodb://127.0.0.1:27017
 MongoDB server version: 3.4.6
 { "ok" : 1 }
-Mongo instance 35.197.62.78 is now SECONDARY
+Mongo instance 35.197.96.221 is now SECONDARY
 MongoDB shell version v3.4.6
 connecting to: mongodb://127.0.0.1:27017
 MongoDB server version: 3.4.6
-2017-08-02T19:18:09.023+0000 E QUERY    [thread1] Error: error doing query: failed: network error while attempting to run command 'replSetStepDown' on host '127.0.0.1:27017'  :
+2017-08-03T17:01:56.682+0000 E QUERY    [thread1] Error: error doing query: failed: network error while attempting to run command 'replSetStepDown' on host '127.0.0.1:27017'  :
 DB.prototype.runCommand@src/mongo/shell/db.js:132:1
 DB.prototype.adminCommand@src/mongo/shell/db.js:150:16
 rs.stepDown@src/mongo/shell/utils.js:1261:12
 @(shell eval):1:1
-Mongo instance 35.197.62.78 is now PRIMARY
+Mongo instance 35.197.96.221 is now PRIMARY
 Transaction started [transaction.yaml].
-ERROR: (gcloud.dns.record-sets.transaction.remove) Record to be removed does not exist
+a24dad5b0779411e7a53b0ab839438f6-279661591.us-east-1.elb.amazonaws.com
+federation
+jimcurtis.info.
+Record removal appended to transaction at [transaction.yaml].
+Record addition appended to transaction at [transaction.yaml].
+Executed transaction [transaction.yaml] for managed-zone [federation].
+Created [https://www.googleapis.com/dns/v1/projects/jiji-168714/managedZones/federation/changes/230].
+ID   START_TIME                STATUS
+230  2017-08-03T17:02:07.409Z  pending
+MongoDB shell version v3.4.6
+connecting to: mongodb://127.0.0.1:27017
+MongoDB server version: 3.4.6
+error: couldn't find a24dad5b0779411e7a53b0ab839438f6-279661591.us-east-1.elb.amazonaws.com:27017 in [
+	{
+		"_id" : 0,
+		"host" : "a4e511549779311e7a53b0ab839438f6-76856616.us-east-1.elb.amazonaws.com:27017",
+		"arbiterOnly" : false,
+		"buildIndexes" : true,
+		"hidden" : false,
+		"priority" : 1,
+		"tags" : {
+			
+		},
+		"slaveDelay" : NumberLong(0),
+		"votes" : 1
+	},
+	{
+		"_id" : 1,
+		"host" : "35.197.96.221:27017",
+		"arbiterOnly" : false,
+		"buildIndexes" : true,
+		"hidden" : false,
+		"priority" : 1,
+		"tags" : {
+			
+		},
+		"slaveDelay" : NumberLong(0),
+		"votes" : 1
+	}
+]
+namespace "pacman" deleted

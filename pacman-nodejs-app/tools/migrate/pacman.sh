@@ -63,12 +63,14 @@ function valid_ip {
 
 # TODO: make DNS management generic enough for all applications
 function update_pacman_dns {
+    	gcloud dns record-sets transaction start -z=${ZONE_NAME}
+	echo ${PACMAN_SRC_PUBLIC_IP}
+	echo ${ZONE_NAME}
+	echo ${DNS_NAME}
 	if valid_ip ${PACMAN_SRC_PUBLIC_IP} ; then 
-    		gcloud dns record-sets transaction start -z=${ZONE_NAME}
-    		gcloud dns record-sets transaction remove -z=${ZONE_NAME} \
-        	--name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_SRC_PUBLIC_IP}"
-	else  gcloud dns record-sets transaction start --zone=${ZONE_NAME}
-		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_IP}" \
+    		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_IP}"
+		--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 
+	else	gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_IP}." \
 			--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
 	fi
     gcloud dns record-sets transaction add -z=${ZONE_NAME} \
