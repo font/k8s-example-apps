@@ -1,9 +1,0 @@
-#!/bin/bash
-
-
-if jq -r '.status.loadBalancer.ingress[0] | has("ip")' < ./dump.json; then
-	echo $(kubectl get service pacman -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-else
-	echo "try hostname"
-fi
-
