@@ -29,7 +29,7 @@
   "spec": {
     "ports": [
       {
-        "nodePort": 31898,
+        "nodePort": 30268,
         "port": 27017,
         "protocol": "TCP",
         "targetPort": 27017
@@ -55,7 +55,7 @@
   "spec": {
     "ports": [
       {
-        "nodePort": 31502,
+        "nodePort": 31161,
         "port": 80,
         "protocol": "TCP",
         "targetPort": 8080

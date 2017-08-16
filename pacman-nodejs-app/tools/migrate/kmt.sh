@@ -220,13 +220,12 @@ function verify_services_ready {
         for s in ${services}; do
             # Filter service load balancer IP address
             local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-	    if [[ ${!service_ip} == '' ]]; then
+	    if [[ ${service_ip} == '' ]]; then
                  local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             fi
 
             # If we determine that deployment is not ready, try again.
 	    if [[ ${service_ip} == '' ]]; then
-		echo ${service_ip}
 		all_ready=false
                	break
        	    fi
@@ -247,7 +246,7 @@ function verify_services_ready {
         	 if [[ ${!dst_ip_var} == '' ]]; then
 			eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
                  fi
-    done
+	 done
     elif [[ ${timeout} -le 0 ]]; then
         echo "WARNING: timeout waiting for services ${services}"
     fi
@@ -268,12 +267,11 @@ function verify_deployments_ready {
             # Filter deployment whose replica counts do not match i.e. creating
             local not_ready=$(kubectl get deploy/$d -o json | \
                 jq '.status | select(.availableReplicas != .readyReplicas) and select(.readyReplicas != .replicas)')
-
-            # If we determine that deployment is not ready, try again.
+	    # If we determine that deployment is not ready, try again.
             if [[ ${not_ready} == true ]]; then
                 all_ready=false
                 break
-            fi
+	fi
         done
 
         (( timeout -= 5 ))
