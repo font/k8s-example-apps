@@ -17,12 +17,13 @@ function add_new_mongo_instance {
 	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
 		bash -c "apt-get -y install dnsutils" 1> /dev/null
     
-	echo "Checking for IP resolution. . . ."
+	echo -n "Checking for IP resolution......"
 
 	while [[ $(kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
                  bash -c "nslookup ${MONGO_DST_PUBLIC_IP} | grep 'NXDOMAIN'") ]]; do 
 		sleep 10
 	done
+	echo "READY"
 
 	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
 		mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_IP}:27017\")"
@@ -90,7 +91,7 @@ function update_pacman_dns {
 			--name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
 	else  
 		gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-			--name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+			--name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_IP}."
 	fi
 	gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 }
