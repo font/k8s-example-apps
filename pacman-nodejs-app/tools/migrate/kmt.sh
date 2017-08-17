@@ -171,13 +171,13 @@ function save_src_cluster_resources {
 
     local services=$(jq -r '(. + select(.kind == "Service") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
 
-    # Save off public IP addresses for services in source cluster
+    # Save off public IP addresses/hostnames for services in source cluster
     for s in ${services}; do
-        eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        eval ${s^^}_SRC_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
-	src_ip_var=$(echo ${s^^}_SRC_PUBLIC_IP)
+	src_ip_var=$(echo ${s^^}_SRC_PUBLIC_ADDRESS)
 	if [[ ${!src_ip_var} == '' ]]; then
-        	eval ${s^^}_SRC_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        	eval ${s^^}_SRC_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
         fi
     done
 }
@@ -219,13 +219,13 @@ function verify_services_ready {
 
         for s in ${services}; do
             # Filter service load balancer IP address
-            local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-	    if [[ ${service_ip} == '' ]]; then
-                 local service_ip=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            local service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+	    if [[ ${service_address} == '' ]]; then
+                 service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
             fi
 
             # If we determine that deployment is not ready, try again.
-	    if [[ ${service_ip} == '' ]]; then
+	    if [[ ${service_address} == '' ]]; then
 		all_ready=false
                	break
        	    fi
@@ -237,14 +237,14 @@ function verify_services_ready {
 
     if [[ ${all_ready} == true ]]; then
         echo "READY"
-        # Save off public IP addresses for services in destination cluster
+        # Save off public IP addresses/hostnames for services in destination cluster
         for s in ${services}; do
-            eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+            eval ${s^^}_DST_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
-	    dst_ip_var=$(echo ${s^^}_DST_PUBLIC_IP)
+	# Check for hostname (used by AWS, for example) or ip (used by GKE, for example)
+	    dst_ip_var=$(echo ${s^^}_DST_PUBLIC_ADDRESS)
         	 if [[ ${!dst_ip_var} == '' ]]; then
-			eval ${s^^}_DST_PUBLIC_IP=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+			eval ${s^^}_DST_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
                  fi
 	 done
     elif [[ ${timeout} -le 0 ]]; then
@@ -265,17 +265,17 @@ function verify_deployments_ready {
 
         for d in ${deployments}; do
             # Filter deployment whose replica counts do not match i.e. creating
-            local not_ready=$(kubectl get deploy/$d -o json | \
-                jq '.status | select(.availableReplicas != .readyReplicas) and select(.readyReplicas != .replicas)')
+	    local not_ready=$(kubectl get deploy/$d -o json | \
+		    jq '.status | select(.availableReplicas != .readyReplicas) and select(.readyReplicas != .replicas)')
 	    # If we determine that deployment is not ready, try again.
-            if [[ ${not_ready} == true ]]; then
-                all_ready=false
-                break
-	fi
-        done
-
-        (( timeout -= 5 ))
-        sleep 5
+	    if [[ ${not_ready} == true ]]; then
+		    all_ready=false
+		    break
+	    fi
+    	done
+   
+	(( timeout -= 5 ))
+	sleep 5
     done
 
     if [[ ${all_ready} == true ]]; then
