@@ -7,28 +7,24 @@ required to set up cluster A, and documents how to migrate it to cluster B manua
 If you have not already done so, follow [these steps](../README.md#prerequisites) to Clone the required repository, create the Pac-Man container image, set up Google Cloud SDK and push the container image.
 
 ## Setup Your AWS cluster (Cluster A)
-Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops
+1. Follow [these steps](https://github.com/kubernetes/kops#installing) to install kops
 
-And [these steps](kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
+2. And [these steps](kubernetes-cluster-aws.md#setup-your-aws-environment) to setup your AWS environment.(Stop at the Configure DNS section).
 
-## Configure DNS
-
-The kops tool requires a place to build the necessary DNS records in order to build a Kubernetes cluster. There are several scenarios available that you can choose from but in this instance, because we are using google cloud platform to manage our DNS and are migrating to a GKE cluster, we will use scenario 3 as outlined [here](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar). Create the subdomain with a different name than the one you would ultimately like to use as the public facing address for your application (ex. aws.example.com)
+3. Store your desired subdomain for the aws cluster:
 
 Since we will be using this subdomain extensively in this tutorial, we will store it in an environment variable for ease
 
 ```bash
 export SUBDOMAIN=subdomain.example.com
 ```
-
- 
-Add the NS records to your [Google Cloud Platform](https://cloud.google.com/dns/update-name-servers)
+4. Using [this link](https://github.com/kubernetes/kops/blob/master/docs/aws.md#):
+	a. Configure DNS using scenario 3
 
 **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
 
-## Cluster State Storage
-
-We need to create a dedicated S3 bucket for `kops` to manage the state of your cluster. [See here for details](https://github.com/kubernetes/kops/blob/master/docs/aws.md#cluster-state-storage).
+	b. Create a dedicated S3 bucket for `kops` for cluster state storage.
+	c. Create and verify the AWS Kubernetes cluster using the subdomain configured above.
 
 ## Create the Kubernetes Cluster
 Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
