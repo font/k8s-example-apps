@@ -19,9 +19,7 @@ Since we will be using this subdomain extensively in this tutorial, we will stor
 export SUBDOMAIN=subdomain.example.com
 ```
 4. Using [this link](https://github.com/kubernetes/kops/blob/master/docs/aws.md#):
-	a. Configure DNS using scenario 3
-
-**Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
+	a. Configure DNS using scenario 3 **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
 
 	b. Create a dedicated S3 bucket for `kops` for cluster state storage.
 	c. Create and verify the AWS Kubernetes cluster using the subdomain configured above.
