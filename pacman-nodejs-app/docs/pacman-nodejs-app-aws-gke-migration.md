@@ -13,7 +13,7 @@ If you have not already done so, follow [these steps](../README.md#prerequisites
 
 3. Store your desired subdomain for the aws cluster:
 
-*Since we will be using this subdomain extensively in this tutorial, we will store it in an environment variable for ease
+* Since we will be using this subdomain extensively in this tutorial, we will store it in an environment variable for ease
 
 ```bash
 export SUBDOMAIN=subdomain.example.com
