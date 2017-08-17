@@ -13,16 +13,16 @@ If you have not already done so, follow [these steps](../README.md#prerequisites
 
 3. Store your desired subdomain for the aws cluster:
 
-Since we will be using this subdomain extensively in this tutorial, we will store it in an environment variable for ease
+*Since we will be using this subdomain extensively in this tutorial, we will store it in an environment variable for ease
 
 ```bash
 export SUBDOMAIN=subdomain.example.com
 ```
 4. Using [this link](https://github.com/kubernetes/kops/blob/master/docs/aws.md#):
-	a. Configure DNS using scenario 3 **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
+	1. Configure DNS using scenario 3 **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
 
-	b. Create a dedicated S3 bucket for `kops` for cluster state storage.
-	c. Create and verify the AWS Kubernetes cluster using the subdomain configured above.
+	2. Create a dedicated S3 bucket for `kops` for cluster state storage.
+	3. Create and verify the AWS Kubernetes cluster using the subdomain configured above.
 
 ## Create the Kubernetes Cluster
 Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
