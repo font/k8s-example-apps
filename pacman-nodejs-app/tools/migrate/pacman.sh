@@ -10,23 +10,24 @@ function add_new_mongo_instance {
 	MONGO_DST_POD=$(kubectl --context ${DST_CONTEXT} get pod \
         	--selector="name=mongo" \
 		--output=jsonpath='{.items..metadata.name}')
-	
-	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-		bash -c "apt-get update" 1> /dev/null
 
-	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-		bash -c "apt-get -y install dnsutils" 1> /dev/null
+	if valid_ip ${PACMAN_SRC_PUBLIC_ADDRESS}; then
+		kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
+			bash -c "apt-get update" 1> /dev/null
+		kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
+			bash -c "apt-get -y install dnsutils" 1> /dev/null
+	fi
     
-	echo -n "Checking for IP resolution......"
+	echo -n "Checking for DNS resolution......"
 
 	while [[ $(kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-                 bash -c "nslookup ${MONGO_DST_PUBLIC_IP} | grep 'NXDOMAIN'") ]]; do 
+                 bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do 
 		sleep 10
 	done
 	echo "READY"
 
 	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-		mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_IP}:27017\")"
+		mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_ADDRESS}:27017\")"
 
 }
 
@@ -40,7 +41,7 @@ function check_mongo_status {
         mongo_status=$(kubectl --context ${context} exec -it ${pod} -- \
             mongo --quiet --eval "JSON.stringify(rs.status())" | \
             jq -r ".members[] | select(.name ==\"${mongo_ip}:27017\") | .stateStr")
-
+	
 	if [[ ${mongo_status} =~ ${status} ]]; then
             echo "Mongo instance ${mongo_ip} is now ${status}"
             break;
@@ -59,53 +60,36 @@ function set_new_mongo_primary {
         mongo --eval "rs.stepDown(120)" || true
 }
 
-function valid_ip {
-    local ip=$1
-    local rc=1
-
-    if [[ ${ip} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        OIFS=${IFS}
-        IFS='.'
-        ip=(${ip})
-        IFS=${OIFS}
-        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255
-            && ${ip[3]} -le 255 ]]
-        rc=$?
-    fi
-
-    return ${rc}
-}
-
-
 # TODO: make DNS management generic enough for all applications
 function update_pacman_dns {
     	gcloud dns record-sets transaction start -z=${ZONE_NAME}
-	if valid_ip ${PACMAN_SRC_PUBLIC_IP} ; then 
-    		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_IP}" \
+	if valid_ip ${PACMAN_SRC_PUBLIC_ADDRESSS} ; then 
+    		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}" \
 		--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 
-	else	gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_IP}." \
+	else	
+		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}." \
 			--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
 	fi
-   	if valid_ip ${PACMAN_DST_PUBLIC_IP} ; then
+   	if valid_ip ${PACMAN_DST_PUBLIC_ADDRESS} ; then
 		gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-			--name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_IP}"
+			--name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}"
 	else  
 		gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-			--name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_IP}."
+			--name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}."
 	fi
 	gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 }
 
 function remove_old_mongo_instance {
     kubectl --context ${DST_CONTEXT} exec -it ${MONGO_DST_POD} -- \
-        mongo --eval "rs.remove(\"${MONGO_SRC_PUBLIC_IP}:27017\")"
+        mongo --eval "rs.remove(\"${MONGO_SRC_PUBLIC_ADDRESS}:27017\")"
 }
 
 function exec_app_entrypoint {
     add_new_mongo_instance
-    check_mongo_status ${SRC_CONTEXT} ${MONGO_SRC_POD} ${MONGO_DST_PUBLIC_IP} 'SECONDARY'
+    check_mongo_status ${SRC_CONTEXT} ${MONGO_SRC_POD} ${MONGO_DST_PUBLIC_ADDRESS} 'SECONDARY'
     set_new_mongo_primary
-    check_mongo_status ${DST_CONTEXT} ${MONGO_DST_POD} ${MONGO_DST_PUBLIC_IP} 'PRIMARY'
+    check_mongo_status ${DST_CONTEXT} ${MONGO_DST_POD} ${MONGO_DST_PUBLIC_ADDRESS} 'PRIMARY'
     update_pacman_dns
     remove_old_mongo_instance
     sleep 5 # Wait for things to stabilize
