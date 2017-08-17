@@ -18,13 +18,12 @@ If you have not already done so, follow [these steps](../README.md#prerequisites
 ```bash
 export SUBDOMAIN=subdomain.example.com
 ```
-4. Using [this link](https://github.com/kubernetes/kops/blob/master/docs/aws.md#):
-	1. Configure DNS using scenario 3 **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
+4. Follow [these steps](https://github.com/kubernetes/kops/blob/master/docs/aws.md#scenario-3-subdomain-for-clusters-in-route53-leaving-the-domain-at-another-registrar) to configure DNS.
+* **Make sure to [test your DNS setup](https://github.com/kubernetes/kops/blob/master/docs/aws.md#testing-your-dns-setup) before moving on.**
 
-	2. Create a dedicated S3 bucket for `kops` for cluster state storage.
-	3. Create and verify the AWS Kubernetes cluster using the subdomain configured above.
+5. Follow [these steps](https://github.com/kubernetes/kops/blob/master/docs/aws.md#cluster-state-storage) to create a dedicated S3 bucket.
 
-## Create the Kubernetes Cluster
+6. Create and verify the AWS Kubernetes cluster using the subdomain configured above following [these steps](https://github.com/onyiny-ang/k8s-example-apps/blob/aws-formatting/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
 Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
 
 ## Setup Your GKE cluster (Cluster B)
@@ -80,7 +79,7 @@ This component creates a mongo DNS entry, so this is why we use `mongo` as the h
 kubectl create -f services/mongo-service.yaml
 ```
 
-Wait until the mongo service has the external IP address (aws uses a dynamic DNS address) listed:
+Wait until the mongo service has the external IP address (AWS uses a dynamic DNS address) listed:
 
 ```bash
 kubectl get svc mongo -o wide --watch
@@ -108,7 +107,7 @@ Verify the container has been created and is in the running state:
 kubectl get pods -o wide --watch
 ```
 
-#### Save MongoDB Load Balancer IP
+#### Save MongoDB Load Balancer Hostname
 
 ```bash
 MONGO_SRC_PUBLIC_HOSTNAME=$(kubectl get svc mongo --output jsonpath="{.status.loadBalancer.ingress[0].hostname}")
@@ -184,7 +183,7 @@ Verify the containers have been created and are in the running state:
 kubectl get pods -o wide --watch
 ```
 
-#### Save Pac-Man Load Balancer IP
+#### Save Pac-Man Load Balancer Hostname
 
 ```bash
 PACMAN_SRC_PUBLIC_HOSTNAME=$(kubectl get svc pacman --output jsonpath="{.status.loadBalancer.ingress[0].hostname}".)
@@ -390,7 +389,7 @@ To perform this migration, the tool makes the following assumptions:
 3. Both clusters are making use of Google Cloud DNS to manage DNS entries. [See here for more details](https://cloud.google.com/dns/migrating).
 4. Google Cloud DNS managed zone is already created in your Google Cloud Platform project.
    [See here for instructions](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone).
-5. `gcloud` cloud SDK is installed and working on client to create gke clusters. [See here for instructions](https://cloud.google.com/sdk/).
+5. `gcloud` cloud SDK is installed and working on client to create the gke cluster and manage Google Cloud DNS. [See here for instructions](https://cloud.google.com/sdk/).
 7. `kubectl` is installed and configured to access both clusters using the provided contexts.
 8. `jq` is installed on the host machine that will be executing `kmt`. [See here for installation instructions](https://github.com/stedolan/jq/wiki/Installation).
 
@@ -429,7 +428,7 @@ gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 ```
 
 ```bash
-kubectl --context=gke_${GCP_PROJECT}_us-central1-b_gce-us-central1 \
+kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
     delete ns pacman
 ```
 
