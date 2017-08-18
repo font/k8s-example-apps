@@ -16,15 +16,15 @@ function add_new_mongo_instance {
 			bash -c "apt-get update" 1> /dev/null
 		kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
 			bash -c "apt-get -y install dnsutils" 1> /dev/null
-	fi
-    
 	echo -n "Checking for DNS resolution......"
-
 	while [[ $(kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
                  bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do 
 		sleep 10
 	done
 	echo "READY"
+	fi
+    
+
 
 	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
 		mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_ADDRESS}:27017\")"
@@ -63,10 +63,13 @@ function set_new_mongo_primary {
 # TODO: make DNS management generic enough for all applications
 function update_pacman_dns {
     	gcloud dns record-sets transaction start -z=${ZONE_NAME}
-	if valid_ip ${PACMAN_SRC_PUBLIC_ADDRESSS} ; then 
+	echo ${PACMAN_SRC_PUBLIC_ADDRESS}
+	if  valid_ip ${PACMAN_SRC_PUBLIC_ADDRESSS} ; then 
+		echo "did ip"
     		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}" \
-		--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 
+			--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 
 	else	
+		echo "did hostname"
 		gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}." \
 			--zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
 	fi
