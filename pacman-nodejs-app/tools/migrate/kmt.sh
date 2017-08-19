@@ -174,10 +174,10 @@ function save_src_cluster_resources {
     # Save off public IP addresses/hostnames for services in source cluster
     for s in ${services}; do
         eval ${s^^}_SRC_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-	# Check for hostname (used by aws, for example) or ip (used by gke, for example)
-	src_ip_var=$(echo ${s^^}_SRC_PUBLIC_ADDRESS)
-	if [[ ${!src_ip_var} == '' ]]; then
-        	eval ${s^^}_SRC_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        # Check for hostname (used by AWS, for example) or IP (used by GKE, for example)
+        src_ip_var=$(echo ${s^^}_SRC_PUBLIC_ADDRESS)
+        if [[ ${!src_ip_var} == '' ]]; then
+            eval ${s^^}_SRC_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
         fi
     done
 }
@@ -189,30 +189,13 @@ function create_dst_cluster_resources {
     kubectl create -f ./${temp_dir}/${NAMESPACE}-ns-dump.json
 }
 
-function valid_ip {
-    local ip=$1
-    local rc=1
-
-    if [[ ${ip} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-        OIFS=${IFS}
-        IFS='.'
-        ip=(${ip})
-        IFS=${OIFS}
-        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255
-            && ${ip[3]} -le 255 ]]
-        rc=$?
-    fi
-
-    return ${rc}
-}
-
 function verify_services_ready {
     local timeout=120 # wait no more than 2 minutes
     local services=$(jq -r '(. + select(.kind == "Service") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
 
     echo -n "Waiting for services [$(echo ${services})]......"
 
-    # Loop until all services have a load balancer IP address
+    # Loop until all services have a load balancer IP address or hostname
     local all_ready=false
     while [[ ${all_ready} == false && ${timeout} -gt 0 ]]; do
         all_ready=true
@@ -221,14 +204,13 @@ function verify_services_ready {
             # Filter service load balancer IP address
             local service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 	    if [[ ${service_address} == '' ]]; then
-                 service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            fi
-
-            # If we determine that deployment is not ready, try again.
+                service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+	    fi
+	    # If we determine that deployment is not ready, try again.
 	    if [[ ${service_address} == '' ]]; then
-		all_ready=false
-               	break
-       	    fi
+	        all_ready=false
+	        break
+	    fi
         done
 
         (( timeout -= 5 ))
@@ -240,13 +222,12 @@ function verify_services_ready {
         # Save off public IP addresses/hostnames for services in destination cluster
         for s in ${services}; do
             eval ${s^^}_DST_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-	# Check for hostname (used by AWS, for example) or ip (used by GKE, for example)
-	    dst_ip_var=$(echo ${s^^}_DST_PUBLIC_ADDRESS)
-        	 if [[ ${!dst_ip_var} == '' ]]; then
-			eval ${s^^}_DST_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-                 fi
-	 done
+            # Check for hostname (used by AWS, for example) or ip (used by GKE, for example)
+            dst_ip_var=$(echo ${s^^}_DST_PUBLIC_ADDRESS)
+            if [[ ${!dst_ip_var} == '' ]]; then
+                eval ${s^^}_DST_PUBLIC_ADDRESS=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            fi
+        done
     elif [[ ${timeout} -le 0 ]]; then
         echo "WARNING: timeout waiting for services ${services}"
     fi
@@ -255,7 +236,6 @@ function verify_services_ready {
 function verify_deployments_ready {
     local timeout=120 # wait no more than 2 minutes
     local deployments=$(jq -r '(. + select(.kind == "Deployment") | .metadata.name)' < ./${temp_dir}/${NAMESPACE}-ns-dump.json)
-
     echo -n "Waiting for deployments [$(echo ${deployments})]......"
 
     # Loop until all deployments have the correct number of replicas running
@@ -265,17 +245,16 @@ function verify_deployments_ready {
 
         for d in ${deployments}; do
             # Filter deployment whose replica counts do not match i.e. creating
-	    local not_ready=$(kubectl get deploy/$d -o json | \
-		    jq '.status | select(.availableReplicas != .readyReplicas) and select(.readyReplicas != .replicas)')
-	    # If we determine that deployment is not ready, try again.
-	    if [[ ${not_ready} == true ]]; then
-		    all_ready=false
-		    break
-	    fi
+            local not_ready=$(kubectl get deploy/$d -o json | \
+                jq '.status | select(.availableReplicas != .readyReplicas) and select(.readyReplicas != .replicas)')
+            # If we determine that deployment is not ready, try again.
+            if [[ ${not_ready} == true ]]; then
+                all_ready=false
+                break
+            fi
     	done
-   
-	(( timeout -= 5 ))
-	sleep 5
+        (( timeout -= 5 ))
+        sleep 5
     done
 
     if [[ ${all_ready} == true ]]; then
