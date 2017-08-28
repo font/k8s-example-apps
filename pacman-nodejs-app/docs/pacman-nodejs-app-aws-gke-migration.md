@@ -23,8 +23,7 @@ export SUBDOMAIN=subdomain.example.com
 
 5. Follow [these steps](https://github.com/kubernetes/kops/blob/master/docs/aws.md#cluster-state-storage) to create a dedicated S3 bucket.
 
-6. Create and verify the AWS Kubernetes cluster using the subdomain configured above following [these steps](https://github.com/onyiny-ang/k8s-example-apps/blob/aws-formatting/pacman-nodejs-app/docs/kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
-Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
+6. Create and verify the AWS Kubernetes cluster following [these steps and using the subdomain configured above](kubernetes-cluster-aws.md#create-the-kubernetes-cluster).
 
 ## Setup Your GKE cluster (Cluster B)
 
@@ -79,7 +78,7 @@ This component creates a mongo DNS entry, so this is why we use `mongo` as the h
 kubectl create -f services/mongo-service.yaml
 ```
 
-Wait until the mongo service has the external IP address (AWS uses a dynamic DNS address) listed:
+Wait until the mongo service has the dynamic DNS address listed:
 
 ```bash
 kubectl get svc mongo -o wide --watch
@@ -157,7 +156,7 @@ This component creates the service to access the application.
 kubectl create -f services/pacman-service.yaml
 ```
 
-Wait until the pacman service has the external IP address listed:
+Wait until the pacman service has the dynamic DNS address listed:
 
 ```bash
 kubectl get svc pacman -o wide --watch
@@ -389,9 +388,9 @@ To perform this migration, the tool makes the following assumptions:
 3. Both clusters are making use of Google Cloud DNS to manage DNS entries. [See here for more details](https://cloud.google.com/dns/migrating).
 4. Google Cloud DNS managed zone is already created in your Google Cloud Platform project.
    [See here for instructions](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone).
-5. `gcloud` cloud SDK is installed and working on client to create the gke cluster and manage Google Cloud DNS. [See here for instructions](https://cloud.google.com/sdk/).
-7. `kubectl` is installed and configured to access both clusters using the provided contexts.
-8. `jq` is installed on the host machine that will be executing `kmt`. [See here for installation instructions](https://github.com/stedolan/jq/wiki/Installation).
+5. `gcloud` cloud SDK is installed and working on client to manage Google Cloud DNS. [See here for instructions](https://cloud.google.com/sdk/).
+6. `kubectl` is installed and configured to access both clusters using the provided contexts.
+7. `jq` is installed on the host machine that will be executing `kmt`. [See here for installation instructions](https://github.com/stedolan/jq/wiki/Installation).
 
 Execute the following command to migrate Pac-Man from the AWS cluster to the GKE cluster in the us-west1-b region.
 
@@ -414,11 +413,11 @@ See [here for more details](../tools/migrate) about using the `kmt` tool.
 
 ## Cleanup
 
-## Cleanup AWS Cluster
+### Cleanup AWS Cluster
 
 Follow [these steps](kubernetes-cluster-aws.md#cleanup) to clean up your aws cluster.
 
-## Cleanup Pac-Man Namespace
+### Cleanup Pac-Man Namespace
 
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}

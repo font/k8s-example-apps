@@ -7,14 +7,15 @@ function valid_ip {
     
     if [[ ${ip} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         OIFS=${IFS}
-	    IFS='.'
-	    ip=(${ip})
-	    IFS=${OIFS}
-	    [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 
-	        && ${ip[3]} -le 255 ]]
-	    rc=$?
+        IFS='.'
+        ip=(${ip})
+        IFS=${OIFS}
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 
+            && ${ip[3]} -le 255 ]]
+        rc=$?
     fi
     
+    echo ${rc}
     return ${rc}
 }
 
@@ -23,27 +24,26 @@ function add_new_mongo_instance {
     
     MONGO_SRC_POD=$(kubectl --context ${SRC_CONTEXT} get pod \
         --selector="name=mongo" \
-	--output=jsonpath='{.items..metadata.name}')
+        --output=jsonpath='{.items..metadata.name}')
     
     MONGO_DST_POD=$(kubectl --context ${DST_CONTEXT} get pod \
-	--selector="name=mongo" \
-	--output=jsonpath='{.items..metadata.name}')
-    
+        --selector="name=mongo" \
+        --output=jsonpath='{.items..metadata.name}')
+
     if ! valid_ip ${PACMAN_DST_PUBLIC_ADDRESS}; then
         kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-	    bash -c "apt-get update" 1> /dev/null
-	kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-	    bash -c "apt-get -y install dnsutils" 1> /dev/null
-	echo -n "Checking for DNS resolution......"
-	while [[ $(kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-	    bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do 
-	    sleep 10
+            bash -c "apt-get update" 1> /dev/null
+        kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
+            bash -c "apt-get -y install dnsutils" 1> /dev/null
+        echo -n "Checking for DNS resolution......"
+        while [[ $(kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
+            bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do 
+            sleep 10
         done
-	echo "READY"
+        echo "READY"
     fi
     kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
         mongo --eval "rs.add(\"${MONGO_DST_PUBLIC_ADDRESS}:27017\")"
-
 }
 
 function check_mongo_status {

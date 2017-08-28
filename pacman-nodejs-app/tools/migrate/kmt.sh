@@ -208,9 +208,9 @@ function verify_services_ready {
 	    fi
 	    # If we determine that deployment is not ready, try again.
 	    if [[ ${service_address} == '' ]]; then
-	        all_ready=false
-	        break
-	    fi
+                all_ready=false
+                break
+            fi
         done
 
         (( timeout -= 5 ))
