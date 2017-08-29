@@ -203,11 +203,11 @@ function verify_services_ready {
         for s in ${services}; do
             # Filter service load balancer IP address
             local service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-	    if [[ ${service_address} == '' ]]; then
+            if [[ ${service_address} == '' ]]; then
                 service_address=$(kubectl get service ${s} -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-	    fi
-	    # If we determine that deployment is not ready, try again.
-	    if [[ ${service_address} == '' ]]; then
+            fi
+            # If we determine that deployment is not ready, try again.
+            if [[ ${service_address} == '' ]]; then
                 all_ready=false
                 break
             fi
@@ -252,7 +252,7 @@ function verify_deployments_ready {
                 all_ready=false
                 break
             fi
-    	done
+        done
         (( timeout -= 5 ))
         sleep 5
     done

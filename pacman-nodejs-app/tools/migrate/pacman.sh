@@ -4,28 +4,28 @@ set -e
 function valid_ip {
     local ip=$1
     local rc=1
-    
+
     if [[ ${ip} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         OIFS=${IFS}
         IFS='.'
         ip=(${ip})
         IFS=${OIFS}
-        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255
             && ${ip[3]} -le 255 ]]
         rc=$?
     fi
-    
+
     echo ${rc}
     return ${rc}
 }
 
 
 function add_new_mongo_instance {
-    
+
     MONGO_SRC_POD=$(kubectl --context ${SRC_CONTEXT} get pod \
         --selector="name=mongo" \
         --output=jsonpath='{.items..metadata.name}')
-    
+
     MONGO_DST_POD=$(kubectl --context ${DST_CONTEXT} get pod \
         --selector="name=mongo" \
         --output=jsonpath='{.items..metadata.name}')
@@ -37,7 +37,7 @@ function add_new_mongo_instance {
             bash -c "apt-get -y install dnsutils" 1> /dev/null
         echo -n "Checking for DNS resolution......"
         while [[ $(kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
-            bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do 
+            bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do
             sleep 10
         done
         echo "READY"
@@ -79,20 +79,20 @@ function set_new_mongo_primary {
 # TODO: make DNS management generic enough for all applications
 function update_pacman_dns {
     gcloud dns record-sets transaction start -z=${ZONE_NAME}
-    if valid_ip ${PACMAN_SRC_PUBLIC_ADDRESS}; then 
+    if valid_ip ${PACMAN_SRC_PUBLIC_ADDRESS}; then
         gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}" \
-	    --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1 
+        --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1
     else
         gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}." \
-	    --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
+        --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
     fi
-    
+
     if valid_ip ${PACMAN_DST_PUBLIC_ADDRESS}; then
         gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-	    --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}"
+        --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}"
     else
         gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-	    --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}."
+        --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}."
     fi
     gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 }
