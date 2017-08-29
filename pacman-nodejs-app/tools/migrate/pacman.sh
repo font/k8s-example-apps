@@ -81,18 +81,18 @@ function update_pacman_dns {
     gcloud dns record-sets transaction start -z=${ZONE_NAME}
     if valid_ip ${PACMAN_SRC_PUBLIC_ADDRESS}; then
         gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}" \
-        --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1
+            --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=A --ttl=1
     else
         gcloud dns record-sets transaction remove "${PACMAN_SRC_PUBLIC_ADDRESS}." \
-        --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
+            --zone=${ZONE_NAME} --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1
     fi
 
     if valid_ip ${PACMAN_DST_PUBLIC_ADDRESS}; then
         gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-        --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}"
+            --name="pacman.${DNS_NAME}" --type=A --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}"
     else
         gcloud dns record-sets transaction add -z=${ZONE_NAME} \
-        --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}."
+            --name="pacman.${DNS_NAME}" --type=CNAME --ttl=1 "${PACMAN_DST_PUBLIC_ADDRESS}."
     fi
     gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 }
