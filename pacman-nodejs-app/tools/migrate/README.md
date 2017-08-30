@@ -12,7 +12,7 @@ It can be used to migrate from cluster A (SOURCE) to cluster B (DESTINATION).
     -v, --verbose          Increase verbosity for debugging
   Required arguments:
     -f, --from-context     source CONTEXT to migrate application
-    -t, --to-context       destination CONTEXT to migration application
+    -t, --to-context       destination CONTEXT to migrate application
     -n, --namespace        namespace containing Kubernetes resources to migrate
     -z, --zone             name of zone for your Google Cloud DNS e.g. zonename
     -d, --dns              domain name used for your Google Cloud DNS zone e.g. 'example.com.'

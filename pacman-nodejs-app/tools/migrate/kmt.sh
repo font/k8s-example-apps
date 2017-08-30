@@ -13,7 +13,7 @@ function usage {
     echo "    -v, --verbose          Increase verbosity for debugging"
     echo "  Required arguments:"
     echo "    -f, --from-context     source CONTEXT to migrate application"
-    echo "    -t, --to-context       destination CONTEXT to migration application"
+    echo "    -t, --to-context       destination CONTEXT to migrate application"
     echo "    -n, --namespace        namespace containing Kubernetes resources to migrate"
     echo "    -z, --zone             name of zone for your Google Cloud DNS e.g. zonename"
     echo "    -d, --dns              domain name used for your Google Cloud DNS zone e.g. 'example.com.'"
