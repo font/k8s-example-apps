@@ -127,4 +127,4 @@ as intended.
 ### Kubernetes Cluster Use-Cases (Without Federation)
 
 - [Pac-Man application migration using GKE](docs/pacman-nodejs-app-gke-migration.md)
-
+- [Pac-Man application migration from AWS to GKE](docs/pacman-nodejs-app-aws-gke-migration.md)
