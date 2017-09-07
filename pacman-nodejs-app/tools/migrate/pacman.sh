@@ -15,7 +15,6 @@ function valid_ip {
         rc=$?
     fi
 
-    echo ${rc}
     return ${rc}
 }
 
@@ -40,6 +39,7 @@ function add_new_mongo_instance {
             bash -c "nslookup ${MONGO_DST_PUBLIC_ADDRESS} | grep 'NXDOMAIN'") ]]; do
             sleep 10
         done
+        sleep 10 # After we succeed let's give it a few more seconds
         echo "READY"
     fi
     kubectl --context ${SRC_CONTEXT} exec -it ${MONGO_SRC_POD} -- \
