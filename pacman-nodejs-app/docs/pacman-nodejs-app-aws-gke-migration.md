@@ -435,3 +435,13 @@ kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 \
 
 Follow [these instructions](kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
 to delete the GKE cluster in us-west.
+
+## Video Demonstration
+
+Here is a playlist with 3 videos demonstrating the AWS <-> GKE migration using the `kmt` tool:
+
+1. Intro to Pac-Man and showing current state (AWS)
+2. Migration from AWS to GKE
+3. Migration from GKE to AWS
+
+[![Pac-Man Game AWS GKE Migration Video Demonstration using KMT](https://img.youtube.com/vi/HHva5npIjmU/0.jpg)](https://www.youtube.com/playlist?list=PLDywARKHDjG8KhUA-hmdQQQunUodGfN3G)
