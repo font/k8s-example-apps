@@ -31,12 +31,6 @@ for making your container images in your registry publicly available. This will 
 image to one place and allow all your Kubernetes clusters to download it from the same location. You could do this
 similarly with the official Docker Hub.
 
-#### Store the GCP Project Name
-
-```bash
-export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
-```
-
 #### Create the Federated Kubernetes Clusters
 
 For this part, note that you'll generally want to use a consistent version of Kubernetes when deploying in all of the different
@@ -49,10 +43,10 @@ Follow these steps:
 3. [Create Google DNS managed zone for cluster](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone)
 4. [Download and install kubefed and kubectl](kubernetes-cluster-gke-federation.md#download-and-install-kubefed-and-kubectl)
 5. [Create and verify 1 AWS Kubernetes cluster in 1 region i.e. us-east](kubernetes-cluster-aws.md)
-6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e. westcentralus](kubernetes-cluster-azure.md)
+6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e. southcentralus](kubernetes-cluster-azure.md)
 7. [Using `kubefed` set up a Kubernetes federation containing each of these clusters: GKE, AWS, and Azure.](kubernetes-cluster-federation.md)
 
-#### Export the Cluster Contexts
+#### Rename and Export the Cluster Contexts
 
 Using the list of contexts for `kubectl`:
 
@@ -63,7 +57,7 @@ kubectl config get-contexts --output=name
 Determine which are the contexts in your federation and assign them to a variable:
 
 ```bash
-export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 az-us-central1 us-east-1.subdomain.example.com"
+export CLUSTERS="gce-us-west1 az-us-central1 aws-us-east1"
 ```
 
 ## Create MongoDB Resources
@@ -73,7 +67,7 @@ export KUBE_FED_CLUSTERS="gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 az-us-centr
 Now using the default storage class in each cluster, we'll create the PVC:
 
 ```bash
-for i in ${KUBE_FED_CLUSTERS}; do
+for i in ${CLUSTERS}; do
     kubectl --context=${i} \
         create -f persistentvolumeclaim/mongo-pvc.yaml
 done
@@ -82,7 +76,7 @@ done
 Verify the PVCs are bound in each cluster:
 
 ```bash
-for i in ${KUBE_FED_CLUSTERS}; do
+for i in ${CLUSTERS}; do
     kubectl --context=${i} \
         get pvc mongo-storage
 done
@@ -133,10 +127,10 @@ we need to run the following commands on the MongoDB instance you want to design
 let's use the GKE us-west1-b instance:
 
 ```bash
-MONGO_POD=$(kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 get pod \
+MONGO_POD=$(kubectl --context=gce-us-west1 get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 exec -it ${MONGO_POD} -- bash
+kubectl --context=gce-us-west1 exec -it ${MONGO_POD} -- bash
 ```
 
 Once inside this pod, make sure all Mongo DNS entries for each region are resolvable. Otherwise the command to
@@ -153,8 +147,8 @@ Then use either `dig` or `nslookup` to perform one of the following lookups for 
 dig mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME> +noall +answer
 nslookup mongo.default.federation.svc.us-west1.<DNS_ZONE_NAME>
 
-dig mongo.default.federation.svc.westcentralus.<DNS_ZONE_NAME> +noall +answer
-nslookup mongo.default.federation.svc.westcentralus.<DNS_ZONE_NAME>
+dig mongo.default.federation.svc.southcentralus.<DNS_ZONE_NAME> +noall +answer
+nslookup mongo.default.federation.svc.southcentralus.<DNS_ZONE_NAME>
 
 dig mongo.default.federation.svc.us-east-1.<DNS_ZONE_NAME> +noall +answer
 nslookup mongo.default.federation.svc.us-east-1.<DNS_ZONE_NAME>
@@ -186,7 +180,7 @@ initcfg = {
                 },
                 {
                         "_id" : 1,
-                        "host" : "mongo.default.federation.svc.westcentralus.federation.com:27017"
+                        "host" : "mongo.default.federation.svc.southcentralus.federation.com:27017"
                 },
                 {
                         "_id" : 2,
@@ -258,8 +252,31 @@ You can also see all the DNS entries that were created in your [Google DNS Manag
 
 ## Play Pac-Man
 
+### Setup Custom CNAME DNS Record
+
+We'll set up an easier DNS record to target our Pac-Man game. Simply create a
+CNAME record entry that points to the top level federation DNS record.
+
+First, we export some variables to simplify our future commands.
+
+```bash
+ZONE_NAME=federation
+DNS_NAME=federation.com.
+```
+
+```bash
+gcloud dns record-sets transaction start -z=${ZONE_NAME}
+gcloud dns record-sets transaction add \
+    -z=${ZONE_NAME} \
+    --name="pacman.${DNS_NAME}" \
+    --type=CNAME \
+    --ttl=1 \
+    pacman.default.federation.svc.${DNS_NAME}
+gcloud dns record-sets transaction execute -z=${ZONE_NAME}
+```
+
 Go ahead and play a few rounds of Pac-Man and invite your friends and colleagues by giving them your FQDN to your Pac-Man application
-e.g. [http://pacman.default.federation.svc.federation.com/](http://pacman.default.federation.svc.federation.com/)
+e.g. [http://pacman.federation.com/](http://pacman.federation.com/)
 (replace `federation.com` with your DNS name).
 
 The DNS will load balance and resolve to any one of the zones in your federated kubernetes cluster. This is represented by the `Cloud:` and `Zone:`
@@ -293,7 +310,7 @@ kubectl delete deploy/mongo svc/mongo
 ##### Delete MongoDB Persistent Volume Claims
 
 ```
-for i in ${KUBE_FED_CLUSTERS}; do \
+for i in ${CLUSTERS}; do \
     kubectl --context=${i} delete pvc/mongo-storage; \
 done
 ```

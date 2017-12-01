@@ -43,13 +43,23 @@ If you're planning to use at least 1 GKE cluster, you'll want to save your proje
 export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 ```
 
+#### Rename Cluster Contexts
+
+We'll want to rename the cluster contexts to make it simpler throughout our
+setup.
+
+```bash
+kubectl config rename-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 gce-us-west1
+kubectl config rename-context us-east-1.subdomain.example.com aws-us-east1
+```
+
 ## Configure Kubernetes Federation Host Cluster
 
 Out of the lists of contexts available to `kubectl` from the command above, select the context you want to use to host the Kubernetes
 federation control plane. For example, using a GKE cluster in the us-west region:
 
 ```bash
-HOST_CLUSTER=gke_${GCP_PROJECT}_us-west1-b_gce-us-west1
+HOST_CLUSTER=gce-us-west1
 ```
 
 ## Configure Kubernetes Federation Clusters to Join
@@ -59,7 +69,7 @@ federation. For example, using the GKE host cluster in the us-west region, an Az
 in the us-east region with their corresponding context names:
 
 ```bash
-JOIN_CLUSTERS="${HOST_CLUSTER} az-us-central1 us-east-1.subdomain.example.com"
+JOIN_CLUSTERS="${HOST_CLUSTER} az-us-central1 aws-us-east1"
 ```
 
 ## Initialize the Federated Control Plane
@@ -123,7 +133,7 @@ kubefed join az-us-central1 \
 ```bash
 kubefed join aws-us-east1 \
     --host-cluster-context=${HOST_CLUSTER} \
-    --cluster-context=us-east-1.subdomain.example.com
+    --cluster-context=aws-us-east1
 ```
 
 #### Verify
