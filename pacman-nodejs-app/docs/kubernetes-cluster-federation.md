@@ -108,9 +108,9 @@ Before proceeding, make sure we're using the newly created `federation` context 
 kubectl config use-context federation
 ```
 
-#### Join Individual Clusters
+#### Join Clusters
 
-If you want to join each cluster individually such as to give it a unique name, then join each one like so:
+If you want to join each cluster individually such as if their context and cluster names did not match, then join each one like so:
 
 ##### gce-us-west1
 
@@ -134,6 +134,17 @@ kubefed join az-us-central1 \
 kubefed join aws-us-east1 \
     --host-cluster-context=${HOST_CLUSTER} \
     --cluster-context=aws-us-east1
+```
+
+Otherwise, if both cluster and context names match, then you can join them all
+using a loop:
+
+```bash
+for c in ${JOIN_CLUSTERS}; do
+    kubefed join ${c} \
+        --host-cluster-context=${HOST_CLUSTER} \
+        --cluster-context=${c}
+done
 ```
 
 #### Verify
@@ -183,6 +194,15 @@ kubefed unjoin az-us-central1 \
 ```bash
 kubefed unjoin aws-us-east1 \
     --host-cluster-context=${HOST_CLUSTER}
+```
+
+Otherwise unjoin them all in one fell swoop:
+
+```bash
+for c in ${JOIN_CLUSTERS}; do
+    kubefed unjoin ${c} \
+        --host-cluster-context=${HOST_CLUSTER}
+done
 ```
 
 #### Delete federation control plane
