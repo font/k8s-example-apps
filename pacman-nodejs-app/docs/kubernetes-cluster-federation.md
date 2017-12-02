@@ -50,7 +50,7 @@ setup.
 
 ```bash
 kubectl config rename-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 gce-us-west1
-kubectl config rename-context us-east-1.subdomain.example.com aws-us-east1
+kubectl config rename-context ${AWS_CLUSTER_NAME} aws-us-east1
 ```
 
 ## Configure Kubernetes Federation Host Cluster

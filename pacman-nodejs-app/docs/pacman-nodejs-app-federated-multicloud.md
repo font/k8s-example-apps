@@ -46,7 +46,7 @@ Follow these steps:
 6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e. southcentralus](kubernetes-cluster-azure.md)
 7. [Using `kubefed` set up a Kubernetes federation containing each of these clusters: GKE, AWS, and Azure.](kubernetes-cluster-federation.md)
 
-#### Rename and Export the Cluster Contexts
+#### Export the Cluster Contexts
 
 Using the list of contexts for `kubectl`:
 
@@ -54,7 +54,7 @@ Using the list of contexts for `kubectl`:
 kubectl config get-contexts --output=name
 ```
 
-Determine which are the contexts in your federation and assign them to a variable:
+Determine the contexts in your federation and assign them to a variable:
 
 ```bash
 export CLUSTERS="gce-us-west1 az-us-central1 aws-us-east1"
@@ -104,19 +104,19 @@ Now create the MongoDB Deployment that will use the `mongo-storage` persistent v
 directory that is to contain the MongoDB database files. In addition, we will pass the `--replSet rs0` parameter
 to `mongod` in order to create a MongoDB replica set.
 
-```
+```bash
 kubectl create -f deployments/mongo-deployment-rs.yaml
 ```
 
 Scale the mongo deployment
 
-```
+```bash
 kubectl scale deploy/mongo --replicas=3
 ```
 
 Wait until the mongo deployment shows 3 pods available
 
-```
+```bash
 kubectl get deploy mongo -o wide --watch
 ```
 
@@ -170,7 +170,7 @@ mongo
 Now we'll create an initial configuration specifying each of the mongos in our replication set. In our example,
 we'll use the GKE west, Azure central, and AWS east instances. Make sure to replace `federation.com` with the DNS zone name you created.
 
-```
+```javascript
 initcfg = {
         "_id" : "rs0",
         "members" : [
@@ -192,13 +192,13 @@ initcfg = {
 
 Initiate the MongoDB replication set:
 
-```
+```javascript
 rs.initiate(initcfg)
 ```
 
 Check the status until this instance shows as `PRIMARY`:
 
-```
+```javascript
 rs.status()
 ```
 
@@ -234,13 +234,13 @@ kubectl create -f deployments/pacman-deployment-rs.yaml
 
 Scale the pacman deployment
 
-```
+```bash
 kubectl scale deploy/pacman --replicas=3
 ```
 
 Wait until the pacman deployment shows 3 pods available
 
-```
+```bash
 kubectl get deploy pacman -o wide --watch
 ```
 
@@ -293,7 +293,7 @@ See who can get the highest score!
 
 Delete Pac-Man deployment and service. Seeing the deployment removed from the federation context may take up to a couple minutes.
 
-```
+```bash
 kubectl delete deploy/pacman svc/pacman
 ```
 
@@ -303,13 +303,13 @@ kubectl delete deploy/pacman svc/pacman
 
 Delete MongoDB deployment and service. Seeing the deployment removed from the federation context may take up to a couple minutes.
 
-```
+```bash
 kubectl delete deploy/mongo svc/mongo
 ```
 
 ##### Delete MongoDB Persistent Volume Claims
 
-```
+```bash
 for i in ${CLUSTERS}; do \
     kubectl --context=${i} delete pvc/mongo-storage; \
 done
@@ -327,3 +327,13 @@ Follow these guides to cleanup the clusters:
 1. [Steps to clean-up your federation cluster created using kubefed](kubernetes-cluster-federation.md#cleanup).
 2. Remove each cluster: [Azure](kubernetes-cluster-azure.md#cleanup),
    [AWS](kubernetes-cluster-aws.md#cleanup), and [GKE](kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
+
+#### Remove kubectl config contexts
+
+Remove kubectl contexts:
+
+```bash
+for i in ${CLUSTERS}; do \
+    kubectl config delete-context ${i}
+done
+```

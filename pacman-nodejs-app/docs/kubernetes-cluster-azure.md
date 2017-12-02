@@ -291,6 +291,7 @@ can use `kubectl` to check on our cluster.
 MASTER_IP=$(az network public-ip list --query "[?contains(name,'k8s-master')].ipAddress | [0]" | sed 's/"//g')
 scp azureuser@${MASTER_IP}:.kube/config .
 export KUBECONFIG=~/.kube/config:`pwd`/config
+kubectl config use-context ${DNS_PREFIX}
 kubectl get nodes -o wide
 ```
 
