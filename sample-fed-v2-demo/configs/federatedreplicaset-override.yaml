@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: federation.k8s.io/v1alpha1
+  kind: FederatedReplicaSetOverride
+  metadata:
+    name: test-replicaset
+    namespace: test-namespace
+  spec:
+    Overrides:
+    - ClusterName: us-east
+      replicas: 5
