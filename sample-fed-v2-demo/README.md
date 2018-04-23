@@ -5,7 +5,9 @@
 The following Demo must be run within the [federation-v2](https://github.com/kubernetes-sigs/federation-v2) repository/Gopath.
 
 - [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-⋅⋅⋅Newer versions of minikube and certain drivers ([kvm2](https://github.com/kubernetes/minikube/issues/2274)) do not run with the "-p --profile" flag. [Minikube v.25.2](https://github.com/kubernetes/minikube/releases/tag/v0.25.2) has been used with virtualbox to successfully run this demo.
+   
+ Newer versions of minikube and certain drivers ([kvm2](https://github.com/kubernetes/minikube/issues/2274)) do not run with the "-p --profile" flag. [Minikube v.25.2](https://github.com/kubernetes/minikube/releases/tag/v0.25.2) has been used with virtualbox to successfully run this demo.   
+   
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - [crinit](https://github.com/kubernetes/cluster-registry/blob/master/docs/development.md)
 - [apiserver-builder](https://github.com/kubernetes-incubator/apiserver-builder/blob/master/docs/installing.md)
