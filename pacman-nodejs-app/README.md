@@ -36,10 +36,9 @@ cd k8s-example-apps/pacman-nodejs-app
 The [Dockerfile](docker/Dockerfile) performs the following steps:
 
 1. It is based on Node.js LTS Version 6 (Boron).
-2. It then clones the Pac-Man game into the configured application directory.
-4. Replaces the host 'localhost' with 'mongo' in the Node.js MongoDB backend API to match the host DNS given to the MongoDB Kubernetes service.
-5. Exposes port 8080 for the web server.
-6. Starts the Node.js application using `npm start`.
+1. It then clones the Pac-Man game into the configured application directory.
+1. Exposes port 8080 for the web server.
+1. Starts the Node.js application using `npm start`.
 
 To build the image run:
 
@@ -86,7 +85,7 @@ You'll want to tag your previously created Docker image to use the Google Cloud 
 
 ```
 docker tag <user>/pacman-nodejs-app gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
-gcloud docker -- push gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
+docker push gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
 ```
 
 Once you've pushed your image, you'll need to update the Kubernetes resources to point to your image before you continue
@@ -105,24 +104,15 @@ or try it out on multiple clusters. Below are links that will guide you through 
 
 - [Pac-Man Node.js App Single Cluster](docs/pacman-nodejs-app-single-cluster.md)
 
-### Federated Kubernetes Cluster Use-Cases
+### Federated-v2 Kubernetes Cluster Use-Cases
 
 Follow the instructions in the below links to test out different federation use-cases.
 
 - [Pac-Man application deployed on GKE k8s federated cluster](docs/pacman-nodejs-app-federated-gke.md)
-- [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-gke-scale.md)
-- Remove Kubernetes cluster from Federation and scale application to remaining clusters.
-- Destroy Kubernetes cluster and watch application scale to remaining clusters.
-- [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)
-- [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-portability.md)
-- [Pac-Man application deployed on AWS federation, then scaled to GKE, then migrated to GKE](docs/pacman-nodejs-app-federated-aws-gke-scale-migrate.md)
-
-#### Kubernetes Federation Issues
-
-Below is a link to some of the known Kubernetes Federation issues that prevents any given Pac-Man federated Kubernetes cluster scnearios above from fully functioning
-as intended.
-
-[Kubernetes Federation Issues](docs/kubernetes-federation-issues.md)
+<!--- [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)-->
+<!--- [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-portability.md)-->
+<!--- [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-gke-scale.md)-->
+<!--- [Pac-Man application deployed on AWS federation, then scaled to GKE, then migrated to GKE](docs/pacman-nodejs-app-federated-aws-gke-scale-migrate.md)-->
 
 ### Kubernetes Cluster Use-Cases (Without Federation)
 
