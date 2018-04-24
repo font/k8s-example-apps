@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: federation.k8s.io/v1alpha1
+  kind: FederatedDeployment
+  metadata:
+    labels:
+      name: pacman
+    name: pacman
+  spec:
+    template:
+      metadata:
+        labels:
+          name: pacman
+      spec:
+        replicas: 0
+        selector:
+          matchLabels:
+            name: pacman
+        template:
+          metadata:
+            labels:
+              name: pacman
+          spec:
+            containers:
+            - image: gcr.io/ifontlabs/pacman-nodejs-app:latest
+              name: pacman
+              env:
+              - name: MONGO_REPLICA_SET
+                value: rs0
+              - name: MONGO_NAMESPACE_SERVICE_HOST
+                value: mongo.mongo.svc.cluster.local
+              ports:
+              - containerPort: 8080
+                name: http-server
+- apiVersion: federation.k8s.io/v1alpha1
+  kind: FederatedDeploymentPlacement
+  metadata:
+    name: pacman
+  spec:
+    clusternames:
