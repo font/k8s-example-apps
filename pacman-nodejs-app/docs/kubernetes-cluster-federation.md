@@ -1,6 +1,7 @@
 # Federated Kubernetes Tutorial
 
-This tutorial will walk you through setting up a Kubernetes cluster federation using `kubefed` with multiple public cloud providers.
+This tutorial will walk you through setting up a Kubernetes cluster federation
+using `kubefnord` with multiple public cloud providers.
 
 ## Prerequisites
 
@@ -15,21 +16,22 @@ and [Azure](kubernetes-cluster-azure.md).
 You should already have a Kubernetes cluster DNS Managed Zone. See
 [these instructions for an example of creating one with Google Cloud DNS](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone).
 
-#### kubectl and kubefed installed
+#### kubectl and kubefnord installed
 
-The `kubectl` and `kubefed` commands should already be installed. You should match the version of these tools to the version of Kubernetes
+The `kubectl` and `kubefnord` commands should already be installed. You should
+match the version of `kubectl` to the version of Kubernetes
 your clusters are running.
 
 ```bash
 kubectl version
-kubefed version
 ```
 
 #### kubectl configured
 
 The `kubectl` command should already have access to the kubeconfig or contexts for each cluster you're going to add to the federation.
 
-To verify, list the contexts stored in your kubeconfig. These will be used later by the `kubefed` command.
+To verify, list the contexts stored in your kubeconfig. These will be used
+later by the `kubefnord` command.
 
 ```bash
 kubectl config get-contexts --output=name
@@ -49,7 +51,7 @@ We'll want to rename the cluster contexts to make it simpler throughout our
 setup.
 
 ```bash
-kubectl config rename-context gke_${GCP_PROJECT}_us-west1-b_gce-us-west1 gce-us-west1
+kubectl config rename-context gke_${GCP_PROJECT}_us-west1-b_gke-us-west1 gke-us-west1
 kubectl config rename-context ${AWS_CLUSTER_NAME} aws-us-east1
 ```
 
@@ -59,7 +61,8 @@ Out of the lists of contexts available to `kubectl` from the command above, sele
 federation control plane. For example, using a GKE cluster in the us-west region:
 
 ```bash
-HOST_CLUSTER=gce-us-west1
+HOST_CLUSTER=gke-us-west1
+kubectl config use-context ${HOST_CLUSTER}
 ```
 
 ## Configure Kubernetes Federation Clusters to Join
@@ -72,68 +75,113 @@ in the us-east region with their corresponding context names:
 JOIN_CLUSTERS="${HOST_CLUSTER} az-us-central1 aws-us-east1"
 ```
 
-## Initialize the Federated Control Plane
-
-Initialization is easy with the `kubefed init` command. We will use the `HOST_CLUSTER` context to host our federated control plane.
-Replace the `--dns-zone-name` parameter to match the DNS zone name you used when you created your DNS zone.
-**Be sure to include the trailing `.` in the DNS zone name**.
-
-`kubefed init` will set some defaults if you do not override them on the command line.
-For example, `--dns-provider='google-clouddns'` is set by default in Kubernetes versions <= 1.5. However, starting with `kubefed` version
-1.6, this argument is mandatory. Additionally, you can pass `--image='gcr.io/google_containers/hyperkube-amd64:v1.5.6'`
-to specify a different version of the federation API server and controller manager. By default, the image version it pulls will
-match the version of `kubefed` you are using.
+## Deploy the Cluster Registry
 
 ```bash
-kubefed init federation \
-    --host-cluster-context=${HOST_CLUSTER} \
-    --dns-provider=google-clouddns \
-    --dns-zone-name=federation.com.
+crinit aggregated init mycr --host-cluster-context=${HOST_CLUSTER}
 ```
 
-Once the command completes, you will have a federated API server and controller-manager running in the `HOST_CLUSTER` zone, in addition
-to a `federation` context for `kubectl` commands.
+## Initialize the Federated-v2 Control Plane
+
+Initialization is easy with the `apiserver-boot` command. The command must be
+run from the root of the federation-v2 repo. We will use the `HOST_CLUSTER`
+context to host our federated control plane.
+<!--TODO: update with DNS instructions once available.
+Replace the `--dns-zone-name` parameter to match the DNS zone name you used when you created your DNS zone.
+**Be sure to include the trailing `.` in the DNS zone name**.
+-->
+
+<!--TODO
+`apiserver-boot` will set some defaults if you do not override them on the command line.
+For example, you can pass `--image` to specify a different version of the
+federation API server and controller manager. By default, the image version it pulls will
+match the version of `kubefnord` you are using.
+-->
+
+<!--
+```bash
+# Restrictive API server permissions
+kubectl create rolebinding -n kube-system \
+    federation.k8s.io:extension-apiserver-authentication-reader \
+    --role=extension-apiserver-authentication-reader \
+    --serviceaccount=federation:default
+
+kubectl create clusterrolebinding federation.k8s.io:apiserver-auth-delegator \
+    --clusterrole=system:auth-delegator \
+    --serviceaccount=federation:default
+```
+-->
+
+```bash
+kubectl create namespace federation
+
+apiserver-boot run in-cluster --name federation --namespace federation \
+    --image gcr.io/<username>/federation-v2:<tagname> \
+    --controller-args="-logtostderr,-v=4"
+
+# This is a bit permissive, we need to create a clusterrole for the federation
+# objects and provide the necessary VERB permissions to them for the controller
+# manager to use via a cluster role binding.
+kubectl create clusterrolebinding federation-admin \
+    --clusterrole=cluster-admin --serviceaccount=federation:default
+```
+
+Adjust memory limit for apiserver:
+
+```bash
+kubectl -n federation patch deploy federation -p \
+    '{"spec":{"template":{"spec":{"containers":[{"name":"apiserver","resources":{"limits":{"memory":"128Mi"},"requests":{"memory":"64Mi"}}}]}}}}'
+```
+
+Once the command completes, you will have a federated API server and
+controller-manager running in the `HOST_CLUSTER` zone.
 
 ## Join the Kubernetes Clusters to the Federation
 
-We'll use `kubefed join` to join each of the Kubernetes clusters. We need to specify in which context the federaton control plane
-is running using the `--host-cluster-context` parameter as well as the context of the Kubernetes cluster we're joining to the federation using
-the `--cluster-context` parameter.
+We'll use `kubefnord join` to join each of the Kubernetes clusters. We need to
+specify in which context the federaton control plane is running using the
+`--host-cluster-context` parameter as well as the context of the Kubernetes
+cluster we're joining to the federation using the `--cluster-context`
+parameter, or leave that option blank if it matches the cluster name specified.
 
-#### Use federation context
-
-Before proceeding, make sure we're using the newly created `federation` context to run our `kubefed join` commands.
+For GCP, if you're using RBAC permissions then you'll need to grant your user
+the ability to create authorization roles by running the following Kubernetes
+command:
 
 ```bash
-kubectl config use-context federation
+kubectl --context=${HOST_CLUSTER} create clusterrolebinding cluster-admin-binding \
+    --clusterrole cluster-admin --user $(gcloud config get-value account)
 ```
 
 #### Join Clusters
 
 If you want to join each cluster individually such as if their context and cluster names did not match, then join each one like so:
 
-##### gce-us-west1
+##### gke-us-west1
 
 ```bash
-kubefed join gce-us-west1 \
+kubefnord join gke-us-west1 \
     --host-cluster-context=${HOST_CLUSTER} \
-    --cluster-context=${HOST_CLUSTER}
+    --cluster-context=${HOST_CLUSTER} \
+    --add-to-registry --v=2
 ```
 
 ##### az-us-central1
 
 ```bash
-kubefed join az-us-central1 \
+kubefnord join az-us-central1 \
     --host-cluster-context=${HOST_CLUSTER} \
-    --cluster-context=az-us-central1
+    --cluster-context=az-us-central1 \
+    --add-to-registry --v=2
 ```
 
 ##### aws-us-east1
 
 ```bash
-kubefed join aws-us-east1 \
+kubefnord join aws-us-east1 \
     --host-cluster-context=${HOST_CLUSTER} \
-    --cluster-context=aws-us-east1
+    --cluster-context=aws-us-east1 \
+    --add-to-registry --v=2
 ```
 
 Otherwise, if both cluster and context names match, then you can join them all
@@ -141,28 +189,17 @@ using a loop:
 
 ```bash
 for c in ${JOIN_CLUSTERS}; do
-    kubefed join ${c} \
+    kubefnord join ${c} \
         --host-cluster-context=${HOST_CLUSTER} \
-        --cluster-context=${c}
+        --cluster-context=${c} \
+        --add-to-registry --v=2
 done
 ```
 
 #### Verify
 
 ```bash
-kubectl get clusters -w
-```
-
-Verify that the default namespace exists in the federation
-
-```
-kubectl get namespaces
-```
-
-If it is missing, create it:
-
-```
-kubectl create -f namespaces/default.yaml
+kubectl get clusters
 ```
 
 You should now have a working federated Kubernetes cluster spanning each zone.
@@ -173,53 +210,51 @@ Cleanup is basically some of the setup steps in reverse.
 
 #### Unjoin Individual Clusters
 
+Unjoining the clusters from the federation is not currently supported in
+`kubefnord` yet. For now, you can manually run the following commands using an
+`unjoin.sh` script in this repo.
+
 If you joined each cluster individually by providing a unique name to each, then unjoin each one like so:
 
-##### gce-us-west1
+##### gke-us-west1
 
 ```bash
-kubefed unjoin gce-us-west1 \
-    --host-cluster-context=${HOST_CLUSTER}
+./tools/unjoin/unjoin.sh ${HOST_CLUSTER} ${HOST_CLUSTER}
 ```
 
 ##### az-us-central1
 
 ```bash
-kubefed unjoin az-us-central1 \
-    --host-cluster-context=${HOST_CLUSTER}
+./tools/unjoin/unjoin.sh ${HOST_CLUSTER} az-us-central1
 ```
 
 ##### aws-us-east1
 
 ```bash
-kubefed unjoin aws-us-east1 \
-    --host-cluster-context=${HOST_CLUSTER}
+./tools/unjoin/unjoin.sh ${HOST_CLUSTER} aws-us-east1
 ```
 
 Otherwise unjoin them all in one fell swoop:
 
 ```bash
 for c in ${JOIN_CLUSTERS}; do
-    kubefed unjoin ${c} \
-        --host-cluster-context=${HOST_CLUSTER}
+    ./tools/unjoin/unjoin.sh ${HOST_CLUSTER} ${c}
 done
+```
+
+#### Delete the Cluster Registry
+
+```bash
+crinit aggregated delete mycr --host-cluster-context=${HOST_CLUSTER}
 ```
 
 #### Delete federation control plane
 
-Cleanup of the federation control plane is not supported in `kubefed` yet.
-For now, we must delete the `federation-system` namespace to remove all the federation resources.
-This removes everything except the persistent storage volume that is dynamically provisioned for the
-federation control plane's etcd. You can delete the federation namespace by running the
-following command in the correct context:
+Cleanup of the federation control plane is not supported in `kubefnord` yet.
+For now, we must delete the `federation` namespace to remove all the federation
+resources.  You can delete the federation namespace by running the following
+command in the correct context:
 
 ```bash
-kubectl delete ns federation-system --context=${HOST_CLUSTER}
-```
-
-#### Delete the federation context
-
-```bash
-kubectl config use-context ${HOST_CLUSTER}
-kubectl config delete-context federation
+kubectl delete ns federation --context=${HOST_CLUSTER}
 ```

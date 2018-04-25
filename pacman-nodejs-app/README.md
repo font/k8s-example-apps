@@ -109,7 +109,7 @@ or try it out on multiple clusters. Below are links that will guide you through 
 Follow the instructions in the below links to test out different federation use-cases.
 
 - [Pac-Man application deployed on GKE k8s federated cluster](docs/pacman-nodejs-app-federated-gke.md)
-<!--- [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)-->
+- [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)
 <!--- [Pac-Man application portability: deploy on AWS and GKE federation, then move to GKE](docs/pacman-nodejs-app-federated-aws-gke-portability.md)-->
 <!--- [Add Kubernetes cluster across GKE public cloud provider to Federation and scale application onto it](docs/pacman-nodejs-app-federated-gke-scale.md)-->
 <!--- [Pac-Man application deployed on AWS federation, then scaled to GKE, then migrated to GKE](docs/pacman-nodejs-app-federated-aws-gke-scale-migrate.md)-->

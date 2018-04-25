@@ -79,7 +79,7 @@ export KOPS_STATE_STORE=s3://prefix-example-com-state-store
 #### Create Cluster Configuration
 
 We need to specify a zone for the cluster. For this, we need to know which availability zones are available to us.
-For this example we will be deploying our cluster to the us-east-1a region.
+For this example we will be deploying our cluster to the us-east-1b region.
 
 ```
 aws ec2 describe-availability-zones --region us-east-1
@@ -89,8 +89,8 @@ Create the cluster configuration using the example command below. This only crea
 
 ```
 kops create cluster --name ${AWS_CLUSTER_NAME} \
-    --zones us-east-1a \
-    --kubernetes-version 1.6.4
+    --zones us-east-1b \
+    --kubernetes-version 1.9.6
 ```
 
 There are several other options you can specify e.g. `--node-count`, `--node-size`, `--master-size`, etc.

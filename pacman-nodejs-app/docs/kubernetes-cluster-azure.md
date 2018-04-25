@@ -12,19 +12,19 @@ You will need an [Azure account](https://azure.microsoft.com/en-us/free/) before
 #### Increase Quota
 
 Make sure you increase your quota for the correct SKU in the specific region you will be creating your Kubernetes cluster.
-For this example, we will be using the South Central US region and the default
+For this example, we will be using the Central US region and the default
 Azure Container Service (AKS) SKU `Standard_D1_v2`. We will also be using the
 default master and agent node count of 1 and 3, respectively, for a total of 4
 nodes.
 
 You can check your current quota limit for the `Standard_Dv2` Family of SKUs in
-the South Central US location (what we'll use in our example below) using:
+the Central US location (what we'll use in our example below) using:
 
 ```bash
-az vm list-usage --location "South Central US" --query "[?name.value=='standardDv2Family']"
+az vm list-usage --location "Central US" --query "[?name.value=='standardDv2Family']"
 ```
 
-If you do not have sufficient quota for the Dv2 Series of SKUs in the South Central US region, you will receive
+If you do not have sufficient quota for the Dv2 Series of SKUs in the Central US region, you will receive
 a `QuotaExceeded` error. You can read more about this error on
 [Azure's Resource Management Common Deployment Errors](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-manager-common-deployment-errors#quotaexceeded).
 If you are using the free trial of Azure, or do not have at least 4 CPU cores
@@ -60,7 +60,7 @@ az login
 There are two ways to create a Kubernetes cluster using Azure's Container Service:
 
 1. Using the default `az aks create` command. This option is not as flexible
-   but easier to set up. For example, you cannot currently specify the version
+   but easier to set up. For example, you cannot currently specify any version
    of Kubernetes you would like to use in the deployment using this option.
 2. Using Azure's Container Service Engine. This option provides the most
    flexibility to create a custom Kubernetes cluster, but is not as trivial to
@@ -70,11 +70,11 @@ There are two ways to create a Kubernetes cluster using Azure's Container Servic
 #### Create Resource Group
 
 Before you can create a cluster regardless of the options above, you need to create a resource group in a specific geo location if you don't already have one.
-Run these example commands to use the South Central US region while specifying whatever name you'd like for the `RESOURCE_GROUP`.
+Run these example commands to use the Central US region while specifying whatever name you'd like for the `RESOURCE_GROUP`.
 
 ```bash
 RESOURCE_GROUP=my-resource-group
-LOCATION=southcentralus
+LOCATION=centralus
 az group create --name=${RESOURCE_GROUP} --location=${LOCATION}
 ```
 
@@ -97,10 +97,19 @@ you would like to use. Use the az provider register command to register the AKS
 provider:
 
 ```bash
+az provider register -n Microsoft.Network
+az provider register -n Microsoft.Storage
+az provider register -n Microsoft.Compute
 az provider register -n Microsoft.ContainerService
 ```
 
 #### Create Cluster
+
+To see a list of available AKS versions run:
+
+```bash
+az aks get-versions -l ${LOCATION}
+```
 
 Once you have a resource group, you are ready to create a cluster in that group. Run the command below. Feel free to use
 whatever `DNS_PREFIX` and `CLUSTER_NAME` you prefer.
@@ -116,7 +125,7 @@ az aks create \
     --resource-group ${RESOURCE_GROUP} \
     --name=${CLUSTER_NAME} \
     --dns-name-prefix=${DNS_PREFIX} \
-    --kubernetes-version 1.8.4 \
+    --kubernetes-version 1.9.6 \
     --generate-ssh-keys \
     --verbose
 ```
@@ -127,7 +136,7 @@ Make sure you have [`kubectl`](https://kubernetes.io/docs/tasks/kubectl/install/
 the master Kubernetes cluster configuration to the `~/.kube/config` file:
 
 ```bash
-az aks kubernetes get-credentials --resource-group=${RESOURCE_GROUP} --name=${CLUSTER_NAME}
+az aks get-credentials --resource-group=${RESOURCE_GROUP} --name=${CLUSTER_NAME}
 ```
 
 #### Verify the Cluster
