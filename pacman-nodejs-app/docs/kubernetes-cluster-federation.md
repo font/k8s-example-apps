@@ -126,11 +126,15 @@ kubectl create clusterrolebinding federation-admin \
     --clusterrole=cluster-admin --serviceaccount=federation:default
 ```
 
-Adjust memory limit for apiserver:
+Adjust memory limit for apiserver, controller, and etcd:
 
 ```bash
 kubectl -n federation patch deploy federation -p \
     '{"spec":{"template":{"spec":{"containers":[{"name":"apiserver","resources":{"limits":{"memory":"128Mi"},"requests":{"memory":"64Mi"}}}]}}}}'
+kubectl -n federation patch deploy federation -p \
+    '{"spec":{"template":{"spec":{"containers":[{"name":"controller","resources":{"limits":{"memory":"128Mi"},"requests":{"memory":"64Mi"}}}]}}}}'
+kubectl -n federation patch statefulset etcd -p \
+    '{"spec":{"template":{"spec":{"containers":[{"name":"etcd","resources":{"limits":{"memory":"128Mi"},"requests":{"memory":"64Mi"}}}]}}}}'
 ```
 
 Once the command completes, you will have a federated API server and
