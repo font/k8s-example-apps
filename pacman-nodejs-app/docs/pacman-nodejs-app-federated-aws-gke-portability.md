@@ -1,8 +1,9 @@
 # Pac-Man Application On Federated Kubernetes Cluster With Public Cloud Provider Portability
 
-This guide will walk you through creating multiple Kubernetes clusters spanning multiple public cloud providers
-and use a federation control plane to deploy the Pac-Man Node.js application onto AWS and GKE clusters, then move it just
-to GKE.
+This guide will walk you through creating multiple Kubernetes clusters spanning
+multiple public cloud providers and use a federation control plane to deploy
+the Pac-Man Node.js application onto AWS and GKE clusters, then move it just to
+GKE.
 
 ## High-Level Architecture
 
