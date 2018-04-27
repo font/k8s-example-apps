@@ -81,9 +81,11 @@ for i in us-west us-east; do echo; echo ------------ ${i} ------------; echo; ku
 
 ## Update FederatedNamespacePlacement
 
-Remove `us-east` and `status`:
+Remove `us-east` via a patch command or manually:
 
 ```bash
+kubectl -n test-namespace patch federatednamespaceplacement test-namespace -p \
+    '{"spec":{"clusternames": ["us-west"]}}'
 kubectl -n test-namespace edit federatednamespaceplacement test-namespace
 ```
 
@@ -93,10 +95,11 @@ Then verify `replicasets`:
 for i in us-west us-east; do echo; echo ------------ ${i} ------------; echo; kubectl --context ${i} -n test-namespace get rs; echo; echo; done
 ```
 
-Update `FederatedNamespacePlacement` to add back `us-east` and remove `status`
-again:
+Update `FederatedNamespacePlacement` to add back `us-east` again via a patch command or manually:
 
 ```bash
+kubectl -n test-namespace patch federatednamespaceplacement test-namespace -p \
+    '{"spec":{"clusternames": ["us-west", "us-east"]}}'
 kubectl -n test-namespace edit federatednamespaceplacement test-namespace
 ```
 
