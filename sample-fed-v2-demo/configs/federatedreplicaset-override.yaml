@@ -8,5 +8,5 @@ items:
     namespace: test-namespace
   spec:
     Overrides:
-    - ClusterName: us-east
+    - clustername: us-east
       replicas: 5
