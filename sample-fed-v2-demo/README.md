@@ -6,7 +6,7 @@ The following Demo must be run within the [federation-v2](https://github.com/kub
 
 - [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
    
- Newer versions of minikube and certain drivers ([kvm2](https://github.com/kubernetes/minikube/issues/2274)) do not run with the "-p --profile" flag. [Minikube v.25.2](https://github.com/kubernetes/minikube/releases/tag/v0.25.2) has been used with virtualbox to successfully run this demo.   
+ Newer versions of minikube and certain drivers ([kvm2](https://github.com/kubernetes/minikube/issues/2274)) do not run with the "-p --profile" flag. [Minikube v.25.2](https://github.com/kubernetes/minikube/releases/tag/v0.25.2) has been used with kvm and virtualbox to successfully run this demo.   
    
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - [crinit](https://github.com/kubernetes/cluster-registry/blob/master/docs/development.md)
