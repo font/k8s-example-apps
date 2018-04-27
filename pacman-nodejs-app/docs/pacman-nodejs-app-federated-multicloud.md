@@ -375,29 +375,27 @@ See who can get the highest score!
 
 ##### Delete Pac-Man Deployment and Service
 
-Delete Pac-Man federated deployment and service.
+Delete Pac-Man federated resources.
 
 ```bash
-kubectl delete federateddeployment/pacman federatedservice/pacman
-kubectl delete federateddeploymentplacement/pacman federatedserviceplacement/pacman
+kubectl delete namespace pacman
 ```
 
 #### Delete MongoDB Resources
 
 ##### Delete MongoDB Deployment and Service
 
-Delete MongoDB federated deployment and service.
+Delete MongoDB federated resources.
 
 ```bash
-kubectl delete federateddeployment/mongo federatedservice/mongo
-kubectl delete federateddeploymentplacement/mongo federatedserviceplacement/mongo
+kubectl delete ns mongo
 ```
 
 ##### Delete MongoDB Persistent Volume Claims
 
 ```bash
 for i in ${CLUSTERS}; do \
-    kubectl --context=${i} delete pvc/mongo-storage; \
+    kubectl --context=${i} -n mongo delete pvc/mongo-storage; \
 done
 ```
 
