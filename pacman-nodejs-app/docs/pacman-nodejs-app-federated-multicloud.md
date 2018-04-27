@@ -1,8 +1,10 @@
 # Pac-Man Application On Federated Kubernetes Cluster Across Multiple Public Cloud providers
 
-This guide will walk you through creating multiple Kubernetes clusters spanning multiple public cloud providers
-and use a federation control plane to deploy the Pac-Man Node.js application onto each cluster. The Kubernetes clusters
-and Pac-Man application will be deployed using the following public cloud providers: Google Cloud Platform, Amazon Web Services, and Azure.
+This guide will walk you through creating multiple Kubernetes clusters spanning
+multiple public cloud providers and use a federation control plane to deploy
+the Pac-Man Node.js application onto each cluster. The Kubernetes clusters and
+Pac-Man application will be deployed using the following public cloud
+providers: Google Cloud Platform, Amazon Web Services, and Azure.
 
 ## High-Level Architecture
 
@@ -77,7 +79,7 @@ export CLUSTERS="gke-us-west1 az-us-central1 aws-us-east1"
 #### Create pacman and mongo Namespaces
 
 ```bash
-kubectl create ns pacman
+kubectl create -f namespace/pacman.yaml
 kubectl create ns mongo
 ```
 
@@ -89,6 +91,13 @@ for i in ${CLUSTERS}; do
 done
 
 kubectl config get-contexts
+```
+
+Set the cluster names for the pacman namespace:
+
+```bash
+kubectl patch federatednamespaceplacement pacman -p \
+    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 ```
 
 ## Create MongoDB Resources
@@ -189,7 +198,6 @@ for i in ${CLUSTERS}; do
     if [[ -z ${IP} ]]; then
         IP=$(kubectl --context=${i} -n mongo get svc mongo -o \
             jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        
     fi
     c=${i^^}
     c=${c//-/_}
