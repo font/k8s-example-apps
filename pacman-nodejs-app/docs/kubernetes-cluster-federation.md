@@ -204,6 +204,7 @@ done
 
 ```bash
 kubectl get clusters
+kubectl describe federatedclusters
 ```
 
 You should now have a working federated Kubernetes cluster spanning each zone.
@@ -261,4 +262,12 @@ command in the correct context:
 
 ```bash
 kubectl delete ns federation --context=${HOST_CLUSTER}
+```
+
+#### Delete Cluster Role Binding
+
+Delete the permissive cluster role binding.
+
+```bash
+kubectl delete clusterrolebinding federation-admin
 ```

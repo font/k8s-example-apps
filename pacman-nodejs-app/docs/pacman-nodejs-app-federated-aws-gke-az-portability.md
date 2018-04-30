@@ -24,7 +24,7 @@ cloud providers: AWS, GKE, and Azure. In order to do this, follow the
 instructions at the following link up until you can play the game. Once
 complete, return back here for the tutorial on migrating Pac-Man away from AWS.
 
-- [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](docs/pacman-nodejs-app-federated-multicloud.md)
+- [Pac-Man application deployed on multiple public cloud providers in a federation: GKE, AWS, and Azure](pacman-nodejs-app-federated-multicloud.md)
 
 ## Migrate Pac-Man away from the AWS Kubernetes Cluster
 

@@ -76,11 +76,24 @@ Determine the contexts in your federation and assign them to a variable:
 export CLUSTERS="gke-us-west1 az-us-central1 aws-us-east1"
 ```
 
-#### Create pacman and mongo Namespaces
+#### Create mongo and pacman Namespaces
 
 ```bash
-kubectl create -f namespace/pacman.yaml
-kubectl create ns mongo
+kubectl create namespace mongo
+```
+
+Create `pacman` federated namespace placement first:
+
+```bash
+kubectl create -f namespace/pacman-federated-namespace-placement.yaml
+kubectl patch federatednamespaceplacement pacman -p \
+    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+```
+
+Create `pacman` namespace:
+
+```bash
+kubectl create namespace pacman
 ```
 
 Set the namespace in each cluster context to this new namespace:
@@ -94,11 +107,6 @@ kubectl config get-contexts
 ```
 
 Set the cluster names for the pacman namespace:
-
-```bash
-kubectl patch federatednamespaceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
-```
 
 ## Create MongoDB Resources
 
@@ -285,6 +293,15 @@ kubectl patch federateddeployment pacman -p \
     '{"spec":{"template":{"spec":{"replicas": 3}}}}'
 ```
 
+<!--
+Override the pacman deployment:
+
+```bash
+kubectl patch federateddeploymentoverride pacman -p \
+    '{"spec":{"Overrides":[{"clustername":"gke-us-west1","replicas": 5}]}}'
+```
+-->
+
 Add clusters to the pacman deployment placement resource:
 
 ```bash
@@ -379,24 +396,17 @@ Delete Pac-Man federated resources.
 
 ```bash
 kubectl delete namespace pacman
+kubectl delete federatednamespaceplacement pacman
 ```
 
 #### Delete MongoDB Resources
 
-##### Delete MongoDB Deployment and Service
+##### Delete MongoDB Deployment, Service, and Persistent Volume Claim
 
 Delete MongoDB federated resources.
 
 ```bash
 kubectl delete ns mongo
-```
-
-##### Delete MongoDB Persistent Volume Claims
-
-```bash
-for i in ${CLUSTERS}; do \
-    kubectl --context=${i} -n mongo delete pvc/mongo-storage; \
-done
 ```
 
 #### Delete DNS entries in Google Cloud DNS
@@ -417,7 +427,7 @@ Follow these guides to cleanup the clusters:
 Remove kubectl contexts:
 
 ```bash
-for i in ${CLUSTERS}; do \
+for i in ${CLUSTERS}; do
     kubectl config delete-context ${i}
 done
 ```
