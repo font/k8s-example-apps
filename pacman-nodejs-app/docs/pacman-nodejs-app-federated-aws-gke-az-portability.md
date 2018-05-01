@@ -69,11 +69,7 @@ Wait until the pacman deployment no longer shows pods running in the AWS
 cluster:
 
 ```bash
-for i in ${CLUSTERS}; do
-    echo; echo ------------ ${i} ------------; echo
-    kubectl --context=${i} get deploy pacman
-    echo; echo
-done
+./bin/mckubectl get deploy pacman
 ```
 
 ## Play Pac-Man

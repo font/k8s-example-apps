@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+for i in ${CLUSTERS}; do
+    echo; echo ------------ ${i} ------------; echo
+    kubectl --context=${i} ${@}
+    echo; echo
+done

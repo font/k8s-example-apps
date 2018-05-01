@@ -312,11 +312,7 @@ kubectl patch federateddeploymentplacement pacman -p \
 Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
 
 ```bash
-for i in ${CLUSTERS}; do
-    echo; echo ------------ ${i} ------------; echo
-    kubectl --context=${i} get deploy pacman
-    echo; echo
-done
+./bin/mckubectl get deploy pacman
 ```
 
 #### Create DNS records
