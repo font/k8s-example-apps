@@ -23,7 +23,7 @@ items:
               name: mongo
           spec:
             containers:
-            - image: mongo
+            - image: mongo:3.6
               name: mongo
               ports:
               - name: mongo
