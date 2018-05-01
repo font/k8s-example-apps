@@ -70,7 +70,9 @@ cluster:
 
 ```bash
 for i in ${CLUSTERS}; do
-    kubectl --context=${i} get deploy pacman -o wide
+    echo; echo ------------ ${i} ------------; echo
+    kubectl --context=${i} get deploy pacman
+    echo; echo
 done
 ```
 
