@@ -112,7 +112,7 @@ az aks get-versions -l ${LOCATION}
 ```
 
 Once you have a resource group, you are ready to create a cluster in that group. Run the command below. Feel free to use
-whatever `DNS_PREFIX` and `CLUSTER_NAME` you prefer.
+whatever `DNS_PREFIX` and `AZ_CLUSTER_NAME` you prefer.
 
 NOTE: This command also automatically generates the
 [Azure Active Directory service principal](https://docs.microsoft.com/en-us/azure/container-service/container-service-kubernetes-service-principal)
@@ -120,10 +120,10 @@ that a Kubernetes cluster in Azure uses and will generate SSH public and private
 
 ```bash
 DNS_PREFIX=az-us-central1
-CLUSTER_NAME=az-us-central1
+AZ_CLUSTER_NAME=az-us-central1
 az aks create \
     --resource-group ${RESOURCE_GROUP} \
-    --name=${CLUSTER_NAME} \
+    --name=${AZ_CLUSTER_NAME} \
     --dns-name-prefix=${DNS_PREFIX} \
     --kubernetes-version 1.9.6 \
     --generate-ssh-keys \
@@ -136,7 +136,7 @@ Make sure you have [`kubectl`](https://kubernetes.io/docs/tasks/kubectl/install/
 the master Kubernetes cluster configuration to the `~/.kube/config` file:
 
 ```bash
-az aks get-credentials --resource-group=${RESOURCE_GROUP} --name=${CLUSTER_NAME}
+az aks get-credentials --resource-group=${RESOURCE_GROUP} --name=${AZ_CLUSTER_NAME}
 ```
 
 #### Verify the Cluster
