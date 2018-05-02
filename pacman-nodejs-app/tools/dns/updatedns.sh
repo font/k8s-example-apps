@@ -192,11 +192,21 @@ function add_new_dns_entry {
 
             # Keep checking until DNS resolves to IP address.
             IP="$(dig ${HOST} +short | head -1)"
-            while [[ -z ${IP} ]]; do
+            echo -n "Waiting for load balancer DNS IP address..."
+            local timeout=120     # (seconds) wait no more than 2 minutes
+            while [[ -z ${IP} && ${timeout} -gt 0 ]]; do
                 # Grab the first IP address.
                 IP="$(dig ${HOST} +short | head -1)"
-                sleep 1
+                echo -n "."
+                (( timeout -= 5 ))
+                sleep 5
             done
+
+            if [[ ${timeout} -le 0 ]]; then
+                echo "WARNING: timeout waiting for load balancer DNS IP address for [${HOST}]"
+            else
+                echo "OK"
+            fi
         fi
 
         # Exported variable example: GKE_US_WEST1_MYNAMESPACE_IP=xxx.xxx.xxx.xxx
