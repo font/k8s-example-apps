@@ -30,9 +30,9 @@ complete, return back here for the tutorial on migrating Pac-Man away from AWS.
 
 Once you've played Pac-Man to verify your application has been properly
 deployed, we'll migrate the application away from AWS to just the GKE and Azure
-Kubernetes cluster only.
+Kubernetes clusters only.
 
-### Update DNS records
+### Update DNS record
 
 Before we can migrate the Pac-Man resources, we need to update the DNS to
 reflect our desired topology so that we maintain uptime before we just remove
@@ -69,7 +69,7 @@ Wait until the pacman deployment no longer shows pods running in the AWS
 cluster:
 
 ```bash
-./bin/mckubectl get deploy pacman
+./tools/mckubectl/mckubectl get deploy pacman
 ```
 
 ## Play Pac-Man
