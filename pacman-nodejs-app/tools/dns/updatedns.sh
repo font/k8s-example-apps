@@ -183,6 +183,29 @@ function remove_old_dns_entry {
 
 function add_new_dns_entry {
     for i in ${DST_CONTEXTS}; do
+        # Wait until service is available
+        echo -n "Waiting for ${NAMESPACE} service..."
+        local timeout=180     # (seconds) wait no more than 3 minutes
+        set +e
+        kubectl --context=${i} get svc ${NAMESPACE} &> /dev/null
+        local rc=${?}
+        while [[ ${rc} -ne 0 && ${timeout} -gt 0 ]]; do
+            # Check if service dns is available
+            echo -n "."
+            (( timeout -= 5 ))
+            sleep 5
+            kubectl --context=${i} get svc ${NAMESPACE} &> /dev/null
+            local rc=${?}
+        done
+        set -e
+
+        if [[ ${timeout} -le 0 ]]; then
+            echo "WARNING: timeout waiting for ${NAMESPACE} service"
+            exit 1
+        else
+            echo "OK"
+        fi
+
         IP=$(kubectl --context=${i} get svc ${NAMESPACE} -o \
             jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
@@ -190,10 +213,28 @@ function add_new_dns_entry {
             HOST=$(kubectl --context=${i} get svc ${NAMESPACE} -o \
                 jsonpath='{.status.loadBalancer.ingress[0].hostname}')
 
+            echo -n "Waiting for ${NAMESPACE} service DNS..."
+            local timeout=180     # (seconds) wait no more than 3 minutes
+            while [[ -z ${HOST} && ${timeout} -gt 0 ]]; do
+                echo -n "."
+                (( timeout -= 5 ))
+                sleep 5
+                # Check if service dns is available
+                HOST=$(kubectl --context=${i} get svc ${NAMESPACE} -o \
+                    jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+            done
+
+            if [[ ${timeout} -le 0 ]]; then
+                echo "WARNING: timeout waiting for ${NAMESPACE} service DNS"
+                exit 1
+            else
+                echo "OK"
+            fi
+
             # Keep checking until DNS resolves to IP address.
             IP="$(dig ${HOST} +short | head -1)"
             echo -n "Waiting for load balancer DNS IP address..."
-            local timeout=120     # (seconds) wait no more than 2 minutes
+            local timeout=180     # (seconds) wait no more than 3 minutes
             while [[ -z ${IP} && ${timeout} -gt 0 ]]; do
                 # Grab the first IP address.
                 IP="$(dig ${HOST} +short | head -1)"
@@ -204,6 +245,7 @@ function add_new_dns_entry {
 
             if [[ ${timeout} -le 0 ]]; then
                 echo "WARNING: timeout waiting for load balancer DNS IP address for [${HOST}]"
+                exit 1
             else
                 echo "OK"
             fi
