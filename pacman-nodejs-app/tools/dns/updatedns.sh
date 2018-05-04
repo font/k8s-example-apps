@@ -118,9 +118,19 @@ function validate_dns_name {
 
 function validate_args {
     validate_contexts
-    validate_namespace
+    #validate_namespace
     validate_zone_name
     validate_dns_name
+}
+
+function dns-updated {
+    local gcloud_tmpfile=${1}
+    local dig_tmpfile=${2}
+
+    DIG_IPS=$(dig ${NAMESPACE}.${DNS_NAME} +short)
+    echo ${DIG_IPS} | sed 's/ /\n/g' > ${dig_tmpfile}
+    # Check for set equality.
+    diff -q <(sort ${gcloud_tmpfile}) <(sort ${dig_tmpfile}) &> /dev/null
 }
 
 function verify_dns_update_propagated {
@@ -138,27 +148,7 @@ function verify_dns_update_propagated {
     local dig_tmpfile=$(mktemp /tmp/${script_name}.XXXXXX)
     echo ${GCLOUD_DNS_IPS} | sed 's/ /\n/g' > ${gcloud_tmpfile}
 
-    echo -n "Checking DNS update..."
-    local timeout=120     # (seconds) wait no more than 2 minutes
-    while [[ ${timeout} -gt 0 ]]; do
-        DIG_IPS=$(dig ${NAMESPACE}.${DNS_NAME} +short)
-        echo ${DIG_IPS} | sed 's/ /\n/g' > ${dig_tmpfile}
-
-        # Check for set equality.
-        if diff -q <(sort ${gcloud_tmpfile}) <(sort ${dig_tmpfile}) &> /dev/null; then
-            break
-        fi
-
-        echo -n "."
-        (( timeout -= 5 ))
-        sleep 5
-    done
-
-    if [[ ${timeout} -le 0 ]]; then
-        echo "WARNING: timeout waiting for DNS update for [${GCLOUD_DNS_IPS}]"
-    else
-        echo "OK"
-    fi
+    wait-for-condition "DNS update" "dns-updated ${gcloud_tmpfile} ${dig_tmpfile}" 180
 
     rm -f ${gcloud_tmpfile} ${dig_tmpfile}
 }
@@ -181,74 +171,80 @@ function remove_old_dns_entry {
         --type=A --ttl=1 ${old_dns_ips}
 }
 
+# wait-for-condition blocks until the provided condition becomes true
+#
+# Globals:
+#  None
+# Arguments:
+#  - 1: message indicating what conditions is being waited for (e.g. 'config to be written')
+#  - 2: a string representing an eval'able condition.  When eval'd it should not output
+#       anything to stdout or stderr.
+#  - 3: optional timeout in seconds.  If not provided, waits forever.
+# Returns:
+#  1 if the condition is not met before the timeout
+function wait-for-condition() {
+  local msg=$1
+  # condition should be a string that can be eval'd.
+  local condition=$2
+  local timeout=${3:-}
+  local sleep_secs=5
+
+  local start_msg="Waiting for ${msg}.."
+  local error_msg="[ERROR] Timeout waiting for ${msg}"
+
+  local counter=0
+  while ! ${condition}; do
+    if [[ "${counter}" = "0" ]]; then
+      echo -n "${start_msg}"
+    fi
+
+    if [[ -z "${timeout}" || "${counter}" -lt "${timeout}" ]]; then
+      counter=$((counter + ${sleep_secs}))
+      if [[ -n "${timeout}" ]]; then
+        echo -n '.'
+      fi
+      sleep ${sleep_secs}
+    else
+      echo -e "\n${error_msg}"
+      return 1
+    fi
+  done
+
+  if [[ "${counter}" != "0" && -n "${timeout}" ]]; then
+    echo 'OK'
+  fi
+}
+
+function namespace-service-ready {
+    kubectl --context=${1} get svc ${NAMESPACE} -o wide &> /dev/null
+}
+
+function namespace-service-external-host-ready {
+    IP=$(kubectl --context=${1} get svc ${NAMESPACE} -o \
+        jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+    if [[ -z ${IP} ]]; then
+        HOST=$(kubectl --context=${1} get svc ${NAMESPACE} -o \
+            jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        [[ -n ${HOST} ]]
+    fi
+}
+
+function namespace-service-dns-ipaddr-available {
+    IP="$(dig ${HOST} +short | head -1)"
+    [[ -n ${IP} ]]
+}
+
 function add_new_dns_entry {
+    local c
     for i in ${DST_CONTEXTS}; do
-        # Wait until service is available
-        echo -n "Waiting for ${NAMESPACE} service..."
-        local timeout=180     # (seconds) wait no more than 3 minutes
-        set +e
-        kubectl --context=${i} get svc ${NAMESPACE} &> /dev/null
-        local rc=${?}
-        while [[ ${rc} -ne 0 && ${timeout} -gt 0 ]]; do
-            # Check if service dns is available
-            echo -n "."
-            (( timeout -= 5 ))
-            sleep 5
-            kubectl --context=${i} get svc ${NAMESPACE} &> /dev/null
-            local rc=${?}
-        done
-        set -e
-
-        if [[ ${timeout} -le 0 ]]; then
-            echo "WARNING: timeout waiting for ${NAMESPACE} service"
-            exit 1
-        else
-            echo "OK"
-        fi
-
-        IP=$(kubectl --context=${i} get svc ${NAMESPACE} -o \
-            jsonpath='{.status.loadBalancer.ingress[0].ip}')
+        wait-for-condition "[${NAMESPACE}] service in [${i}]" "namespace-service-ready ${i}" 180
+        wait-for-condition "[${NAMESPACE}] service external host in [${i}]" \
+            "namespace-service-external-host-ready ${i}" 180
 
         if [[ -z ${IP} ]]; then
-            HOST=$(kubectl --context=${i} get svc ${NAMESPACE} -o \
-                jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-
-            echo -n "Waiting for ${NAMESPACE} service DNS..."
-            local timeout=180     # (seconds) wait no more than 3 minutes
-            while [[ -z ${HOST} && ${timeout} -gt 0 ]]; do
-                echo -n "."
-                (( timeout -= 5 ))
-                sleep 5
-                # Check if service dns is available
-                HOST=$(kubectl --context=${i} get svc ${NAMESPACE} -o \
-                    jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            done
-
-            if [[ ${timeout} -le 0 ]]; then
-                echo "WARNING: timeout waiting for ${NAMESPACE} service DNS"
-                exit 1
-            else
-                echo "OK"
-            fi
-
-            # Keep checking until DNS resolves to IP address.
-            IP="$(dig ${HOST} +short | head -1)"
-            echo -n "Waiting for load balancer DNS IP address..."
-            local timeout=180     # (seconds) wait no more than 3 minutes
-            while [[ -z ${IP} && ${timeout} -gt 0 ]]; do
-                # Grab the first IP address.
-                IP="$(dig ${HOST} +short | head -1)"
-                echo -n "."
-                (( timeout -= 5 ))
-                sleep 5
-            done
-
-            if [[ ${timeout} -le 0 ]]; then
-                echo "WARNING: timeout waiting for load balancer DNS IP address for [${HOST}]"
-                exit 1
-            else
-                echo "OK"
-            fi
+            wait-for-condition "load balancer DNS IP address in [${i}]" \
+                "namespace-service-dns-ipaddr-available" 180
         fi
 
         # Exported variable example: GKE_US_WEST1_MYNAMESPACE_IP=xxx.xxx.xxx.xxx
@@ -265,11 +261,11 @@ function add_new_dns_entry {
     for i in ${DST_CONTEXTS}; do
         c=${i^^}
         c=${c//-/_}
-        IP=$(echo -n ${c}_${NAMESPACE^^}_IP)
+        local ip=$(echo -n ${c}_${NAMESPACE^^}_IP)
         if [[ -z ${NEW_DNS_IPS} ]]; then
-            NEW_DNS_IPS="${!IP}"
+            NEW_DNS_IPS="${!ip}"
         else
-            NEW_DNS_IPS+=" ${!IP}"
+            NEW_DNS_IPS+=" ${!ip}"
         fi
     done
 
@@ -281,8 +277,18 @@ function add_new_dns_entry {
 
 function execute_dns_transaction {
     echo "Executing transaction on zone [${ZONE_NAME}]..."
-    gcloud dns record-sets transaction execute -z=${ZONE_NAME}
-    sleep 5 # Give some time to update.
+    DNS_TX_ID=$(gcloud dns record-sets transaction execute \
+        -z=${ZONE_NAME} | tail -1 | awk '{print $1}')
+}
+
+function gcloud-dns-tx-done {
+    local status=$(gcloud dns record-sets changes describe \
+        -z ${ZONE_NAME} ${1} | awk '/status/ {print $2}')
+    [[ "${status}" == "done" ]]
+}
+
+function verify_dns_transaction {
+    wait-for-condition "DNS transaction" "gcloud-dns-tx-done ${DNS_TX_ID}" 180
 }
 
 function run_dns_transaction {
@@ -290,6 +296,7 @@ function run_dns_transaction {
     remove_old_dns_entry
     add_new_dns_entry
     execute_dns_transaction
+    verify_dns_transaction
 }
 
 function perform_dns_updates {
