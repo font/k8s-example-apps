@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#
+# updatedns - Run the updatedns.sh tool
+#
+#
+#
+set -e
+
+SCRIPT_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+${SCRIPT_ROOT}/updatedns.sh ${@} \
+    -n pacman -z ${ZONE_NAME} -d ${DNS_NAME}
