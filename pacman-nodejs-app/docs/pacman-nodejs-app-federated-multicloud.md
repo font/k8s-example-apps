@@ -409,7 +409,7 @@ kubectl delete ns mongo
 
 #### Delete DNS entries in Google Cloud DNS
 
-Delete the `mongo` and `pacman` DNS entries that were created in your
+Delete the `pacman` DNS entry that was created in your
 [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
 
 #### Cleanup rest of federation cluster
