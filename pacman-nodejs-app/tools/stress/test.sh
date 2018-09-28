@@ -12,12 +12,12 @@ while true; do
         echo "---------- ${i} -----------"
         set -x
         kubectl patch federatednamespaceplacement pacman -p \
-            "{\"spec\":{\"clusternames\": [\"gke-us-west1\", \"az-us-central1\", \"aws-us-east1\"]}}"
+            "{\"spec\":{\"clusterNames\": [\"gke-us-west1\", \"az-us-central1\", \"aws-us-east1\"]}}"
         set +x
         time updatedns -t gke-us-west1 -t ${i}
         set -x
         kubectl patch federatednamespaceplacement pacman -p \
-            "{\"spec\":{\"clusternames\": [\"gke-us-west1\", \"${i}\"]}}"
+            "{\"spec\":{\"clusterNames\": [\"gke-us-west1\", \"${i}\"]}}"
         set +x
     done
     echo -e "\n\n\n"
