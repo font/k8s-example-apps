@@ -99,14 +99,14 @@ Using `mongo` in each application will resolve to the local `mongo` instance in
 the cluster.
 
 ```bash
-kubectl create -f services/mongo-service.yaml
+kubectl create -f services/mongo-federated-service.yaml
 ```
 
 Add clusters to the mongo service placement resource:
 
 ```bash
-kubectl patch federatedserviceplacement mongo -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
+kubectl patch federatedserviceplacement mongo --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
 ```
 
 Wait until the mongo service has all the external IP addresses listed:
@@ -124,21 +124,21 @@ directory that is to contain the MongoDB database files. In addition, we will pa
 to `mongod` in order to create a MongoDB replica set.
 
 ```bash
-kubectl create -f deployments/mongo-deployment-rs.yaml
+kubectl create -f deployments/mongo-federated-deployment-rs.yaml
 ```
 
 Scale the mongo deployment:
 
 ```bash
-kubectl patch federateddeployment mongo -p \
+kubectl patch federateddeployment mongo --type=merge -p \
     '{"spec":{"template":{"spec":{"replicas": 1}}}}'
 ```
 
 Add clusters to the mongo deployment placement resource:
 
 ```bash
-kubectl patch federateddeploymentplacement mongo -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
+kubectl patch federateddeploymentplacement mongo --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
 ```
 
 Wait until the mongo deployment shows 3 total pods available, 1 in each cluster:
@@ -212,14 +212,14 @@ Once you have all instances showing up as `SECONDARY` and this one as `PRIMARY`,
 This component creates the necessary `pacman` load balancer for each cluster.
 
 ```bash
-kubectl create -f services/pacman-service.yaml
+kubectl create -f services/pacman-federated-service.yaml
 ```
 
 Add clusters to the pacman service placement resource:
 
 ```bash
-kubectl patch federatedserviceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
+kubectl patch federatedserviceplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
 ```
 
 Wait and verify the service has all the external IP addresses listed:
@@ -235,27 +235,27 @@ done
 We'll need to create the Pac-Man game deployment to access the application on port 80.
 
 ```bash
-kubectl create -f deployments/pacman-deployment-rs.yaml
+kubectl create -f deployments/pacman-federated-deployment-rs.yaml
 ```
 
 Scale the pacman deployment:
 
 ```bash
-kubectl patch federateddeployment pacman -p \
+kubectl patch federateddeployment pacman --type=merge -p \
     '{"spec":{"template":{"spec":{"replicas": 3}}}}'
 ```
 
 Add clusters to the pacman deployment placement resource:
 
 ```bash
-kubectl patch federateddeploymentplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
+kubectl patch federateddeploymentplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
 ```
 
 Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
 
 ```bash
-./bin/mckubectl get deploy pacman
+./tools/mckubectl/mckubectl get deploy pacman
 ```
 
 #### Create DNS records

@@ -60,8 +60,8 @@ the cluster hosting the `pacman` namespace and all its contents. You can do
 this via the following patch command or manually:
 
 ```bash
-kubectl patch federatednamespaceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1"]}}'
+kubectl patch federatednamespaceplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1"]}}'
 kubectl edit federatednamespaceplacement pacman
 ```
 

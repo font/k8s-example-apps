@@ -2,10 +2,9 @@
 
 This guide will walk you through creating multiple Kubernetes clusters spanning
 multiple public cloud providers and use a federation control plane to deploy
-the Pac-Man Node.js application onto each cluster, then move it away from AWS.
-The Kubernetes clusters and Pac-Man application will be deployed using the
-following public cloud providers: Google Cloud Platform, Amazon Web Services,
-and Azure.
+the Pac-Man Node.js application onto the Google Cloud Platform and Microsoft
+Azure clusters, then swap the Amazon Web Services cluster with the Azure
+cluster.
 
 ## High-Level Architecture
 
@@ -56,8 +55,8 @@ as another cluster hosting the `pacman` namespace and all its contents. You can
 do this via the following patch command or manually:
 
 ```bash
-kubectl patch federatednamespaceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+kubectl patch federatednamespaceplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 kubectl edit federatednamespaceplacement pacman
 ```
 
@@ -100,8 +99,8 @@ the cluster hosting the `pacman` namespace and all its contents. You can do
 this via the following patch command or manually:
 
 ```bash
-kubectl patch federatednamespaceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "aws-us-east1"]}}'
+kubectl patch federatednamespaceplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "aws-us-east1"]}}'
 kubectl edit federatednamespaceplacement pacman
 ```
 

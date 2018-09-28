@@ -47,12 +47,12 @@ Follow these steps:
 3. [Create Google DNS managed zone for
    cluster](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone)
 4. [Download and install kubectl and
-   kubefnord](kubernetes-cluster-gke-federation.md#download-and-install-kubectl-and-kubefnord)
+   kubefed2](kubernetes-cluster-gke-federation.md#download-and-install-kubectl-and-kubefed2)
 5. [Create and verify 1 AWS Kubernetes cluster in 1 region i.e.
    us-east](kubernetes-cluster-aws.md)
 6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e.
    centralus](kubernetes-cluster-azure.md)
-7. [Deploy the Cluster Registry and use `kubefnord` set up a Kubernetes
+7. [Deploy the federation control plane and use `kubefed2` to set up a Kubernetes
    federation containing each of these clusters: GKE, AWS, and
    Azure.](kubernetes-cluster-federation.md)
 
@@ -80,23 +80,10 @@ export CLUSTERS="gke-us-west1 az-us-central1 aws-us-east1"
 
 ```bash
 kubectl create namespace mongo
-```
-
-Create `pacman` federated namespace placement first:
-
-```bash
-kubectl create -f namespace/pacman-federated-namespace-placement.yaml
-kubectl patch federatednamespaceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
-```
-
-Create `pacman` namespace:
-
-```bash
 kubectl create namespace pacman
 ```
 
-Set the namespace in each cluster context to this new namespace:
+Set the namespace in each cluster context to the `pacman` namespace:
 
 ```bash
 for i in ${CLUSTERS}; do
@@ -106,7 +93,14 @@ done
 kubectl config get-contexts
 ```
 
-Set the cluster names for the pacman namespace:
+Create `pacman` federated namespace placement:
+
+```bash
+sed -i 's/    - "null"/    - gke-us-west1/' namespace/pacman-federated-namespace-placement.yaml
+kubectl create -f namespace/pacman-federated-namespace-placement.yaml
+kubectl patch federatednamespaceplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+```
 
 ## Create MongoDB Resources
 
@@ -124,10 +118,7 @@ done
 Verify the PVCs are bound in each cluster:
 
 ```bash
-for i in ${CLUSTERS}; do
-    kubectl --context=${i} -n mongo \
-        get pvc mongo-storage
-done
+./tools/mckubectl/mckubectl -n mongo get pvc mongo-storage
 ```
 
 #### Create MongoDB Service
@@ -144,17 +135,14 @@ kubectl -n mongo create -f services/mongo-federated-service.yaml
 Add clusters to the mongo service placement resource:
 
 ```bash
-kubectl -n mongo patch federatedserviceplacement mongo -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+kubectl -n mongo patch federatedserviceplacement mongo --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 ```
 
 Wait until the mongo service has all the external IP addresses (dynamic DNS for AWS) listed:
 
 ```bash
-for i in ${CLUSTERS}; do
-    kubectl --context=${i} -n mongo \
-        get svc mongo -o wide
-done
+./tools/mckubectl/mckubectl -n mongo get svc mongo -o wide
 ```
 
 #### Create MongoDB Kubernetes Deployment
@@ -171,24 +159,21 @@ kubectl -n mongo create -f deployments/mongo-federated-deployment-rs.yaml
 Scale the mongo deployment:
 
 ```bash
-kubectl -n mongo patch federateddeployment mongo -p \
+kubectl -n mongo patch federateddeployment mongo --type=merge -p \
     '{"spec":{"template":{"spec":{"replicas": 1}}}}'
 ```
 
 Add clusters to the mongo deployment placement resource:
 
 ```bash
-kubectl -n mongo patch federateddeploymentplacement mongo -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+kubectl -n mongo patch federateddeploymentplacement mongo --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 ```
 
 Wait until the mongo deployment shows 3 total pods available, 1 in each cluster:
 
 ```bash
-for i in ${CLUSTERS}; do
-    kubectl --context=${i} -n mongo \
-        get deploy mongo -o wide
-done
+./tools/mckubectl/mckubectl -n mongo get deploy mongo -o wide
 ```
 
 #### Create the MongoDB Replication Set
@@ -266,16 +251,14 @@ kubectl create -f services/pacman-federated-service.yaml
 Add clusters to the pacman service placement resource:
 
 ```bash
-kubectl patch federatedserviceplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+kubectl patch federatedserviceplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 ```
 
 Wait and verify the service has all the external IP addresses listed:
 
 ```bash
-for i in ${CLUSTERS}; do
-    kubectl --context=${i} get svc pacman -o wide
-done
+./tools/mckubectl/mckubectl get svc pacman -o wide
 ```
 
 #### Create the Pac-Man Deployment
@@ -289,7 +272,7 @@ kubectl create -f deployments/pacman-federated-deployment-rs.yaml
 Scale the pacman deployment:
 
 ```bash
-kubectl patch federateddeployment pacman -p \
+kubectl patch federateddeployment pacman --type=merge -p \
     '{"spec":{"template":{"spec":{"replicas": 3}}}}'
 ```
 
@@ -297,7 +280,7 @@ kubectl patch federateddeployment pacman -p \
 Override the pacman deployment:
 
 ```bash
-kubectl patch federateddeploymentoverride pacman -p \
+kubectl patch federateddeploymentoverride pacman --type=merge -p \
     '{"spec":{"Overrides":[{"clustername":"gke-us-west1","replicas": 5}]}}'
 ```
 -->
@@ -305,8 +288,8 @@ kubectl patch federateddeploymentoverride pacman -p \
 Add clusters to the pacman deployment placement resource:
 
 ```bash
-kubectl patch federateddeploymentplacement pacman -p \
-    '{"spec":{"clusternames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
+kubectl patch federateddeploymentplacement pacman --type=merge -p \
+    '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 ```
 
 Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
@@ -394,7 +377,6 @@ Delete Pac-Man federated resources.
 
 ```bash
 kubectl delete namespace pacman
-kubectl delete federatednamespaceplacement pacman
 ```
 
 #### Delete MongoDB Resources
@@ -416,7 +398,7 @@ Delete the `pacman` DNS entry that was created in your
 
 Follow these guides to cleanup the clusters:
 
-1. [Steps to clean-up your federation cluster created using kubefnord](kubernetes-cluster-federation.md#cleanup).
+1. [Steps to clean-up your federation cluster created using kubefed2](kubernetes-cluster-federation.md#cleanup).
 2. Remove each cluster: [Azure](kubernetes-cluster-azure.md#cleanup),
    [AWS](kubernetes-cluster-aws.md#cleanup), and [GKE](kubernetes-cluster-gke-federation.md#delete-kubernetes-clusters)
 
