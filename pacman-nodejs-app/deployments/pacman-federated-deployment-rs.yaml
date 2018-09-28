@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: List
 items:
-- apiVersion: federation.k8s.io/v1alpha1
+- apiVersion: core.federation.k8s.io/v1alpha1
   kind: FederatedDeployment
   metadata:
     labels:
@@ -33,7 +33,7 @@ items:
               ports:
               - containerPort: 8080
                 name: http-server
-- apiVersion: federation.k8s.io/v1alpha1
+- apiVersion: core.federation.k8s.io/v1alpha1
   kind: FederatedDeploymentOverride
   metadata:
     name: pacman
@@ -41,9 +41,10 @@ items:
     Overrides:
     - clustername: gke-us-west1
       replicas: 5
-- apiVersion: federation.k8s.io/v1alpha1
+- apiVersion: core.federation.k8s.io/v1alpha1
   kind: FederatedDeploymentPlacement
   metadata:
     name: pacman
   spec:
-    clusternames:
+    clusterNames:
+    - "null"
