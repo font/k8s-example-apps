@@ -1,2 +1,4 @@
 .sourceme
 configs
+*.log
+go/
