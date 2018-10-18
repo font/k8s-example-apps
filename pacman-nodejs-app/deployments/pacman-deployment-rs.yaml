@@ -12,7 +12,7 @@ spec:
         name: pacman
     spec:
       containers:
-      - image: gcr.io/ifontlabs/pacman-nodejs-app:latest
+      - image: quay.io/ifont/pacman-nodejs-app:latest
         name: pacman
         env:
         - name: MONGO_REPLICA_SET
