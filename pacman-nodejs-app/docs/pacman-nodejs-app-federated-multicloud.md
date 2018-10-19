@@ -44,15 +44,13 @@ Follow these steps:
    us-west](kubernetes-cluster-gke-federation.md#gke-us-west1)
 2. [Verify the GKE
    cluster](kubernetes-cluster-gke-federation.md#verify-the-clusters)
-3. [Create Google DNS managed zone for
-   cluster](kubernetes-cluster-gke-federation.md#cluster-dns-managed-zone)
-4. [Download and install kubectl and
+3. [Download and install kubectl and
    kubefed2](kubernetes-cluster-gke-federation.md#download-and-install-kubectl-and-kubefed2)
-5. [Create and verify 1 AWS Kubernetes cluster in 1 region i.e.
+4. [Create and verify 1 AWS Kubernetes cluster in 1 region i.e.
    us-east](kubernetes-cluster-aws.md)
-6. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e.
+5. [Create and verify 1 Azure Kubernetes cluster in 1 region i.e.
    centralus](kubernetes-cluster-azure.md)
-7. [Deploy the federation control plane and use `kubefed2` to set up a Kubernetes
+6. [Deploy the federation control plane and use `kubefed2` to set up a Kubernetes
    federation containing each of these clusters: GKE, AWS, and
    Azure.](kubernetes-cluster-federation.md)
 
@@ -300,49 +298,12 @@ Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
 
 #### Create DNS records
 
-In order to create DNS records, we need to grab each of the load balancer IP
-addresses for the pacman service in each of the clusters.
+From here you can create DNS records in a couple of ways.
 
-```bash
-for i in ${CLUSTERS}; do
-    IP=$(kubectl --context=${i} get svc pacman -o \
-        jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    if [[ -z ${IP} ]]; then
-        HOST=$(kubectl --context=${i} get svc pacman -o \
-            jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        IP="$(dig ${HOST} +short | head -1)"
-    fi
-    c=${i^^}
-    c=${c//-/_}
-    eval ${c}_PACMAN_IP=${IP}
-    export ${c}_PACMAN_IP
-    echo "${c}_PACMAN_IP: ${IP}"
-done
-```
-
-Set the value of your `ZONE_NAME` and `DNS_NAME` used for your Google Cloud DNS configuration.
-
-```bash
-ZONE_NAME=zonename
-DNS_NAME=example.com.
-```
-
-Then execute the below commands:
-
-```bash
-gcloud dns record-sets transaction start -z=${ZONE_NAME}
-unset PACMAN_IPS
-for i in ${CLUSTERS}; do
-    c=${i^^}
-    c=${c//-/_}
-    IP=$(echo -n ${c}_PACMAN_IP)
-    PACMAN_IPS+=" ${!IP}"
-done
-gcloud dns record-sets transaction add \
-    -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" \
-    --type=A --ttl=1 ${PACMAN_IPS}
-gcloud dns record-sets transaction execute -z=${ZONE_NAME}
-```
+1. [Manual](manual-dns-records.md) - manually execute commands to program the
+   DNS for Pac-Man.
+2. [External-DNS](external-dns.md) - use `external-dns` to automatically manage
+   the DNS entries for you.
 
 Once your DNS is updated to reflect the `pacman` load balancer service IP
 addresses for each cluster, open up your browser and try to access it via its
@@ -389,10 +350,11 @@ Delete MongoDB federated resources.
 kubectl delete ns mongo
 ```
 
-#### Delete DNS entries in Google Cloud DNS
+#### Delete DNS entries
 
-Delete the `pacman` DNS entry that was created in your
-[Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+1. [Manual](manual-dns-records.md#delete-dns-records) - manually remove the DNS
+   entries.
+2. [External-DNS](external-dns.md#cleanup) - remove `external-dns`.
 
 #### Cleanup rest of federation cluster
 

@@ -255,42 +255,12 @@ Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
 
 #### Create DNS records
 
-In order to create DNS records, we need to grab each of the load balancer IP
-addresses for the pacman service in each of the clusters.
+From here you can create DNS records in a couple of ways.
 
-```bash
-for i in ${CLUSTERS}; do
-    IP=$(kubectl --context=${i} get svc pacman -o \
-        jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    i=${i//-/_}
-    eval ${i^^}_PACMAN_IP=${IP}
-    export ${i^^}_PACMAN_IP
-    echo "${i^^}_PACMAN_IP: ${IP}"
-done
-```
-
-Set the value of your `ZONE_NAME` and `DNS_NAME` used for your Google Cloud DNS configuration.
-
-```bash
-ZONE_NAME=zonename
-DNS_NAME=example.com.
-```
-
-Then execute the below commands:
-
-```bash
-gcloud dns record-sets transaction start -z=${ZONE_NAME}
-unset PACMAN_IPS
-for i in ${CLUSTERS}; do
-    i=${i//-/_}
-    IP=$(echo -n ${i^^}_PACMAN_IP)
-    PACMAN_IPS+=" ${!IP}"
-done
-gcloud dns record-sets transaction add \
-    -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" \
-    --type=A --ttl=1 ${PACMAN_IPS}
-gcloud dns record-sets transaction execute -z=${ZONE_NAME}
-```
+1. [Manual](manual-dns-records.md) - manually execute commands to program the
+   DNS for Pac-Man.
+2. [External-DNS](external-dns.md) - use `external-dns` to automatically manage
+   the DNS entries for you.
 
 Once your DNS is updated to reflect the `pacman` load balancer service IP
 addresses for each cluster, open up your browser and try to access it via its
