@@ -56,26 +56,6 @@ gcloud container clusters list
 export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
 ```
 
-## Cluster DNS Managed Zone
-
-<!--TODO: update with instructions once available-->
-<!--Kubernetes federated services are able to manage external DNS entries based on services created across a federated set of Kubernetes clusters.-->
-For this example, we'll setup a [Google DNS managed
-zone](https://cloud.google.com/dns/zones) to hold the DNS entries. <!--Kubernetes supports
-other external DNS providers using a plugin based system on the Federated
-Controller Manager.-->
-
-#### Create a Google DNS Managed Zone
-
-The follow command will create a DNS zone named `federation.com`. Specify your own zone name here. In a production setup a valid managed
-zone backed by a registered DNS domain should be used.
-
-```bash
-gcloud dns managed-zones create federation \
-  --description "Kubernetes federation testing" \
-  --dns-name federation.com
-```
-
 ## Download and Install kubectl and kubefed2
 
 Replace the version strings with whatever version you want in the `curl`
@@ -263,15 +243,6 @@ You can delete the federation deployment by running the following script:
 
 ```bash
 ./scripts/delete-federation.sh
-```
-
-#### Delete Google DNS Managed Zone
-
-The managed zone must be empty before you can delete it. Visit the Cloud DNS console
-and delete all resource records before running the following command:
-
-```bash
-gcloud dns managed-zones delete federation
 ```
 
 #### Delete Kubernetes clusters
