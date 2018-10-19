@@ -26,24 +26,21 @@ versions of Kubernetes.
 
 ```bash
 gcloud container clusters create gke-us-west1 \
-  --zone=us-west1-b \
-  --scopes "cloud-platform,storage-ro,logging-write,monitoring-write,service-control,service-management,https://www.googleapis.com/auth/ndev.clouddns.readwrite"
+  --zone=us-west1-b --scopes "cloud-platform"
 ```
 
 #### gke-us-central1
 
 ```bash
 gcloud container clusters create gke-us-central1 \
-  --zone=us-central1-b \
-  --scopes "cloud-platform,storage-ro,logging-write,monitoring-write,service-control,service-management,https://www.googleapis.com/auth/ndev.clouddns.readwrite"
+  --zone=us-central1-b --scopes "cloud-platform"
 ```
 
 #### gke-us-east1
 
 ```bash
 gcloud container clusters create gke-us-east1 \
-  --zone=us-east1-b \
-  --scopes "cloud-platform,storage-ro,logging-write,monitoring-write,service-control,service-management,https://www.googleapis.com/auth/ndev.clouddns.readwrite"
+  --zone=us-east1-b --scopes "cloud-platform"
 ```
 #### Verify the clusters
 
@@ -134,9 +131,9 @@ the ability to create authorization roles by running the following Kubernetes
 command:
 
 ```bash
-export GCP_ZONES="west central east"
-for i in ${GCP_ZONES}; do \
-    kubectl --context=gke-us-${i}1 create clusterrolebinding cluster-admin-binding \
+export CLUSTERS="gke-us-west1 gke-us-central1 gke-us-east1"
+for i in ${CLUSTERS}; do \
+    kubectl --context=${i} create clusterrolebinding cluster-admin-binding \
     --clusterrole cluster-admin --user $(gcloud config get-value account)
 done
 ```
@@ -190,9 +187,8 @@ the ability to create authorization roles by running the following Kubernetes
 command:
 
 ```bash
-export GCP_ZONES="west central east"
-for i in ${GCP_ZONES}; do \
-    kubectl --context=gke-us-${i}1 create clusterrolebinding cluster-admin-binding \
+for i in ${CLUSTERS}; do \
+    kubectl --context=${i} create clusterrolebinding cluster-admin-binding \
     --clusterrole cluster-admin --user $(gcloud config get-value account)
 done
 ```
@@ -291,7 +287,7 @@ gcloud container clusters delete gke-us-east1 --zone=us-east1-b
 #### Delete the kubeconfig contexts
 
 ```bash
-for i in ${GCP_ZONES}; do \
+for i in ${CLUSTERS}; do \
     kubectl config delete-context gke-us-${i}1
 done
 ```
