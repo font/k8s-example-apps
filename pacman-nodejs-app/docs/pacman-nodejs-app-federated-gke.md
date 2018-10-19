@@ -313,10 +313,11 @@ for i in ${CLUSTERS}; do
 done
 ```
 
-#### Delete DNS entries in Google Cloud DNS
+#### Delete DNS entries
 
-Delete the `mongo` and `pacman` DNS entries that were created in your [Google
-DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
+1. [Manual](manual-dns-records.md#delete-dns-records) - manually remove the DNS
+   entries.
+2. [External-DNS](external-dns.md#cleanup) - remove `external-dns`.
 
 #### Cleanup rest of federation cluster
 
