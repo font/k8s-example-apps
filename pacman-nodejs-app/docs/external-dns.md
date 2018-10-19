@@ -97,12 +97,26 @@ kubectl get multiclusterservicednsrecord pacman -o yaml
 kubectl get dnsendpoint service-pacman -o yaml
 ```
 
+#### Create Short DNS Entry for Application
+
+In order to have an easy to use URL, let's add a simple `pacman.example.com`
+DNS entry:
+
+```bash
+ZONE_NAME=zonename
+gcloud dns record-sets transaction start -z=${ZONE_NAME}
+gcloud dns record-sets transaction add \
+    -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" \
+    --type=CNAME --ttl=1 pacman.pacman.federation.svc.${DNS_NAME}.
+gcloud dns record-sets transaction execute -z=${ZONE_NAME}
+```
+
 #### Delete Google DNS Managed Zone
 
-The managed zone must be empty before you can delete it. Visit the Cloud DNS console
-and delete all resource records before running the following command:
+The managed zone must be empty before you can delete it. Visit the [Google DNS
+console](https://console.cloud.google.com/networking/dns/zones) and delete all
+resource records before running the following command:
 
 ```bash
 gcloud dns managed-zones delete federation
 ```
-
