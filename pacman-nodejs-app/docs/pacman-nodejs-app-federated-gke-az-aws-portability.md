@@ -71,16 +71,23 @@ proceed to updating the DNS record.
 
 ### Update DNS
 
+This section is broken up into different methods of updating DNS, depending on
+what method you chose during the tutorials.
+
+#### Manually
+
+If you used the manual DNS setup during the tutorial, you'll want to use this
+section for migrating.
+
 Now that we have Pac-Man resources in our AWS cluster, we need to update the
 DNS to reflect our desired topology so that we can complete the next step of
 the migration of Pac-Man to the AWS cluster. We will remove the Azure cluster
 from the DNS before we migrate the Pac-Man resources away from Azure so that we
 maintain uptime.
 
-Until the federation-v2 DNS load balancing feature is implemented, we need to
-manually update the DNS entry to also point to the AWS cluster's `pacman`
-federated service load balancer IP address. To do that, run the following
-script:
+We need to manually update the DNS entry to also point to the AWS cluster's
+`pacman` federated service load balancer IP address. To do that, run the
+following script:
 
 ```bash
 ./tools/dns/updatedns.sh -t gke-us-west1 -t aws-us-east1 -n pacman \
@@ -89,6 +96,12 @@ script:
 
 Once the script completes, the DNS will be updated to point to the GKE and AWS
 clusters.
+
+#### ExternalDNS
+
+If you used `external-dns` to set up DNS during the tutorial, rest assured
+that as you continue through this section your DNS will be automatically
+updated by `external-dns`.
 
 ### Migrate Pac-Man Resources
 

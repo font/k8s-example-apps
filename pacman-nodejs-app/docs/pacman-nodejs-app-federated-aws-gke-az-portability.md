@@ -34,14 +34,21 @@ Kubernetes clusters only.
 
 ### Update DNS record
 
+This section is broken up into different methods of updating DNS, depending on
+what method you chose during the tutorials.
+
+#### Manually
+
+If you used the manual DNS setup during the tutorial, you'll want to use this
+section for migrating.
+
 Before we can migrate the Pac-Man resources, we need to update the DNS to
 reflect our desired topology so that we maintain uptime before we just remove
 the AWS cluster.
 
-Until the federation-v2 DNS load balancing feature is implemented, we need to
-manually update the DNS entry to no longer point to the AWS cluster's `pacman`
-federated service load balancer IP address. To do that, run the following
-script:
+We need to manually update the DNS entry to no longer point to the AWS
+cluster's `pacman` federated service load balancer IP address. To do that, run
+the following script:
 
 ```bash
 ./tools/dns/updatedns.sh -t gke-us-west1 -t az-us-central1 -n pacman \
@@ -50,6 +57,12 @@ script:
 
 Once the script completes, you are ready to remove the Pac-Man resources from
 the AWS cluster.
+
+#### ExternalDNS
+
+If you used `external-dns` to set up DNS during the tutorial, rest assured
+that as you continue through this section your DNS will be automatically
+updated by `external-dns`.
 
 ### Migrate Pac-Man Resources
 
