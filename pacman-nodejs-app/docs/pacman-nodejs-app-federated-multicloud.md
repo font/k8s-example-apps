@@ -310,9 +310,6 @@ addresses for each cluster, open up your browser and try to access it via its
 DNS e.g.  [http://pacman.example.com/](http://pacman.example.com/).  Make sure
 to replace `example.com` with your DNS name.
 
-You can also see all the DNS entries that were created in your [Google DNS
-Managed Zone](https://console.cloud.google.com/networking/dns/zones).
-
 ## Play Pac-Man
 
 Go ahead and play a few rounds of Pac-Man and invite your friends and

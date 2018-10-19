@@ -51,5 +51,5 @@ gcloud dns record-sets transaction execute -z=${ZONE_NAME}
 
 ## Delete DNS records
 
-Delete the `pacman` DNS entry that was created in your
+Delete the `pacman` and possibly any `mongo` DNS entries that were created in your
 [Google DNS Managed Zone](https://console.cloud.google.com/networking/dns/zones).
