@@ -43,6 +43,9 @@ metadata:
 spec:
   strategy:
     type: Recreate
+  selector:
+    matchLabels:
+      app: external-dns
   template:
     metadata:
       labels:
@@ -55,10 +58,12 @@ spec:
         - --source=crd
         - --crd-source-apiversion=multiclusterdns.federation.k8s.io/v1alpha1
         - --crd-source-kind=DNSEndpoint
+        - --policy=sync
         - --provider=google
         - --domain-filter=${DNS_NAME}
         - --registry=txt
         - --txt-owner-id=my-identifier
+        - --txt-prefix=txt
 EOF
 ```
 
