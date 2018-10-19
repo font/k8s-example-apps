@@ -32,12 +32,6 @@ us-east.  Then follow the instructions in the
 initialize and join your clusters together.  [Follow these steps to get set up
 using this method](kubernetes-cluster-gke-federation.md).
 
-#### Store the GCP Project Name
-
-```bash
-export GCP_PROJECT=$(gcloud config list --format='value(core.project)')
-```
-
 #### Set current-context to host cluster
 
 ```bash
@@ -49,7 +43,7 @@ kubectl config use-context gke-us-west1
 For example since we're using us-west, us-central, and us-east:
 
 ```bash
-export GCP_ZONES="west central east"
+export CLUSTERS="gke-us-west1 gke-us-central1 gke-us-east1"
 ```
 
 #### Create pacman and mongo Namespaces
@@ -62,8 +56,8 @@ kubectl create ns mongo
 Set the namespace in each cluster context to this new namespace:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl config set-context gke-us-${i}1 --namespace pacman
+for i in ${CLUSTERS}; do
+    kubectl config set-context ${i} --namespace pacman
 done
 
 kubectl config get-contexts
@@ -76,8 +70,8 @@ kubectl config get-contexts
 Create the PVC:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl --context=gke-us-${i}1 -n mongo \
+for i in ${CLUSTERS}; do
+    kubectl --context=${i} -n mongo \
     create -f persistentvolumeclaim/mongo-pvc.yaml; \
 done
 ```
@@ -85,8 +79,8 @@ done
 Verify the PVCs are bound in each cluster:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl --context=gke-us-${i}1 -n mongo\
+for i in ${CLUSTERS}; do
+    kubectl --context=${i} -n mongo\
     get pvc mongo-storage; \
 done
 ```
@@ -99,21 +93,21 @@ Using `mongo` in each application will resolve to the local `mongo` instance in
 the cluster.
 
 ```bash
-kubectl create -f services/mongo-federated-service.yaml
+kubectl -n mongo create -f services/mongo-federated-service.yaml
 ```
 
 Add clusters to the mongo service placement resource:
 
 ```bash
-kubectl patch federatedserviceplacement mongo --type=merge -p \
+kubectl -n mongo patch federatedserviceplacement mongo --type=merge -p \
     '{"spec":{"clusterNames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
 ```
 
 Wait until the mongo service has all the external IP addresses listed:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl --context=gke-us-${i}1 get svc mongo -o wide
+for i in ${CLUSTERS}; do
+    kubectl --context=${i} -n mongo get svc mongo -o wide
 done
 ```
 
@@ -124,28 +118,28 @@ directory that is to contain the MongoDB database files. In addition, we will pa
 to `mongod` in order to create a MongoDB replica set.
 
 ```bash
-kubectl create -f deployments/mongo-federated-deployment-rs.yaml
+kubectl -n mongo create -f deployments/mongo-federated-deployment-rs.yaml
 ```
 
 Scale the mongo deployment:
 
 ```bash
-kubectl patch federateddeployment mongo --type=merge -p \
+kubectl -n mongo patch federateddeployment mongo --type=merge -p \
     '{"spec":{"template":{"spec":{"replicas": 1}}}}'
 ```
 
 Add clusters to the mongo deployment placement resource:
 
 ```bash
-kubectl patch federateddeploymentplacement mongo --type=merge -p \
+kubectl -n mongo patch federateddeploymentplacement mongo --type=merge -p \
     '{"spec":{"clusterNames": ["gke-us-west1", "gke-us-central1", "gke-us-east1"]}}'
 ```
 
 Wait until the mongo deployment shows 3 total pods available, 1 in each cluster:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl --context=gke-us-${i}1 get deploy mongo -o wide
+for i in ${CLUSTERS}; do
+    kubectl --context=${i} -n mongo get deploy mongo -o wide
 done
 ```
 
@@ -158,12 +152,13 @@ use the us-west1-b instance. First, we need to capture the hostnames for the
 MongoDB replication set. Take note of the following IP addresses:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    IP=$(kubectl --context=gke-us-${i}1 get svc mongo -o \
+for i in ${CLUSTERS}; do
+    IP=$(kubectl --context=${i} -n mongo get svc mongo -o \
         jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    eval GKE_US_${i^^}1_MONGO_IP=${IP}
-    export GKE_US_${i^^}1_MONGO_IP
-    echo "GKE_US_${i^^}1_MONGO_IP: ${IP}"
+    i=${i//-/_}
+    eval ${i^^}_MONGO_IP=${IP}
+    export ${i^^}_MONGO_IP
+    echo "${i^^}_MONGO_IP: ${IP}"
 done
 ```
 
@@ -171,10 +166,10 @@ Once you've noted all the IP addresses, launch the `mongo` CLI and create the
 replication set specifying each of the mongos in our replication set.
 
 ```bash
-MONGO_POD=$(kubectl --context=gke-us-west1 get pod \
+MONGO_POD=$(kubectl --context=gke-us-west1 -n mongo get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=gke-us-west1 \
+kubectl --context=gke-us-west1 -n mongo \
     exec -it ${MONGO_POD} -- \
     mongo --eval "rs.initiate({
                     '_id' : 'rs0',
@@ -198,7 +193,7 @@ kubectl --context=gke-us-west1 \
 Check the status until this instance shows as `PRIMARY`:
 
 ```bash
-kubectl --context=gke-us-west1 \
+kubectl --context=gke-us-west1 -n mongo \
     exec -it ${MONGO_POD} -- \
     mongo --eval "rs.status()"
 ```
@@ -225,8 +220,8 @@ kubectl patch federatedserviceplacement pacman --type=merge -p \
 Wait and verify the service has all the external IP addresses listed:
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl --context=gke-us-${i}1 get svc pacman -o wide
+for i in ${CLUSTERS}; do
+    kubectl --context=${i} get svc pacman -o wide
 done
 ```
 
@@ -264,12 +259,13 @@ In order to create DNS records, we need to grab each of the load balancer IP
 addresses for the pacman service in each of the clusters.
 
 ```bash
-for i in ${GCP_ZONES}; do
-    IP=$(kubectl --context=gke-us-${i}1 get svc pacman -o \
+for i in ${CLUSTERS}; do
+    IP=$(kubectl --context=${i} get svc pacman -o \
         jsonpath='{.status.loadBalancer.ingress[0].ip}')
-    eval GKE_US_${i^^}1_PACMAN_IP=${IP}
-    export GKE_US_${i^^}1_PACMAN_IP
-    echo "GKE_US_${i^^}1_PACMAN_IP: ${IP}"
+    i=${i//-/_}
+    eval ${i^^}_PACMAN_IP=${IP}
+    export ${i^^}_PACMAN_IP
+    echo "${i^^}_PACMAN_IP: ${IP}"
 done
 ```
 
@@ -285,8 +281,9 @@ Then execute the below commands:
 ```bash
 gcloud dns record-sets transaction start -z=${ZONE_NAME}
 unset PACMAN_IPS
-for i in ${GCP_ZONES}; do
-    IP=$(echo -n GKE_US_${i^^}1_PACMAN_IP)
+for i in ${CLUSTERS}; do
+    i=${i//-/_}
+    IP=$(echo -n ${i^^}_PACMAN_IP)
     PACMAN_IPS+=" ${!IP}"
 done
 gcloud dns record-sets transaction add \
@@ -337,15 +334,15 @@ kubectl delete federateddeploymentplacement/pacman federatedserviceplacement/pac
 Delete MongoDB federated deployment and service.
 
 ```bash
-kubectl delete federateddeployment/mongo federatedservice/mongo
-kubectl delete federateddeploymentplacement/mongo federatedserviceplacement/mongo
+kubectl -n mongo delete federateddeployment/mongo federatedservice/mongo
+kubectl -n mongo delete federateddeploymentplacement/mongo federatedserviceplacement/mongo
 ```
 
 ##### Delete MongoDB Persistent Volume Claims
 
 ```bash
-for i in ${GCP_ZONES}; do
-    kubectl --context=gke-us-${i}1 delete pvc/mongo-storage; \
+for i in ${CLUSTERS}; do
+    kubectl --context=${i} -n mongo delete pvc/mongo-storage; \
 done
 ```
 
