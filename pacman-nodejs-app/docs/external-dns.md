@@ -22,7 +22,7 @@ gcloud dns managed-zones create federation \
   --dns-name ${DNS_NAME}
 ```
 
-#### Deploy `external-dns`
+#### Deploy ExternalDNS
 
 We will deploy `external-dns` to the same namespace as the federation controller
 manager is running in so that it can use the same permissions necessary to
@@ -109,6 +109,30 @@ gcloud dns record-sets transaction add \
     -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" \
     --type=CNAME --ttl=1 pacman.pacman.federation.svc.${DNS_NAME}.
 gcloud dns record-sets transaction execute -z=${ZONE_NAME}
+```
+
+## Cleanup
+
+#### Remove Short DNS Entry for Application
+
+```bash
+gcloud dns record-sets transaction start -z=${ZONE_NAME}
+gcloud dns record-sets transaction remove \
+    -z=${ZONE_NAME} --name="pacman.${DNS_NAME}" \
+    --type=CNAME --ttl=1 pacman.pacman.federation.svc.${DNS_NAME}.
+gcloud dns record-sets transaction execute -z=${ZONE_NAME}
+```
+
+#### Delete ServiceDNSRecord
+
+```bash
+kubectl delete multiclusterservicednsrecord pacman
+```
+
+#### Delete ExternalDNS Deployment
+
+```bash
+kubectl -n federation-system delete deploy external-dns
 ```
 
 #### Delete Google DNS Managed Zone
