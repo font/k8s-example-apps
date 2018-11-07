@@ -19,7 +19,7 @@ items:
       spec:
         containers:
         - name: haproxy
-          image: haproxy:1.8
+          image: quay.io/ifont/haproxy:1.8
           ports:
           - containerPort: 8080
           volumeMounts:
