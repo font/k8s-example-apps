@@ -27,10 +27,8 @@ Follow these steps to [push the Pac-Man container image to your Google Cloud Con
 #### Create the Kubernetes Clusters
 
 Create 3 GKE Kubernetes clusters in 3 regions e.g. us-west, us-central, and
-us-east.  Then follow the instructions in the
-[Federation-v2](https://github.com/kubernetes-sigs/federation-v2) repo to
-initialize and join your clusters together.  [Follow these steps to get set up
-using this method](kubernetes-cluster-gke-federation.md).
+us-east, then initialize the federation and join the clusters. [Follow these
+steps to get set up](kubernetes-cluster-gke-federation.md).
 
 #### Set current-context to host cluster
 
@@ -253,6 +251,10 @@ Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
 ./tools/mckubectl/mckubectl get deploy pacman
 ```
 
+## Create Load Balancer
+
+## DNS
+
 #### Create DNS records
 
 From here you can create DNS records in a couple of ways.
@@ -266,6 +268,17 @@ Once your DNS is updated to reflect the `pacman` load balancer service IP
 addresses for each cluster, open up your browser and try to access it via its
 DNS e.g.  [http://pacman.example.com/](http://pacman.example.com/).  Make sure
 to replace `example.com` with your DNS name.
+
+## L7 Load Balancer
+
+#### Deploy HAProxy
+
+Follow the instructions to [deploy HAProxy as an L7 load balancer](haproxy.md).
+
+Once the L7 load balancer is deployed with a DNS entry to point to it, open up
+your browser and try to access it via its DNS e.g.
+[http://pacman.example.com/](http://pacman.example.com/).  Make sure to replace
+`example.com` with your DNS name.
 
 ## Play Pac-Man
 
@@ -285,40 +298,38 @@ See who can get the highest score!
 
 #### Delete Pac-Man Resources
 
-##### Delete Pac-Man Deployment and Service
-
-Delete Pac-Man federated deployment and service.
+Delete the `pacman` namespace to remove federated deployment and service.
 
 ```bash
-kubectl delete federateddeployment/pacman federatedservice/pacman
-kubectl delete federateddeploymentplacement/pacman federatedserviceplacement/pacman
+kubectl delete ns pacman
 ```
 
 #### Delete MongoDB Resources
 
-##### Delete MongoDB Deployment and Service
-
-Delete MongoDB federated deployment and service.
+Delete the `mongo` namespace to remove federated deployment and service.
 
 ```bash
-kubectl -n mongo delete federateddeployment/mongo federatedservice/mongo
-kubectl -n mongo delete federateddeploymentplacement/mongo federatedserviceplacement/mongo
+kubectl delete ns mongo
 ```
 
-##### Delete MongoDB Persistent Volume Claims
+#### Delete Load Balancer
 
-```bash
-for i in ${CLUSTERS}; do
-    kubectl --context=${i} -n mongo delete pvc/mongo-storage; \
-done
-```
+Follow the below cleanup steps depending on whether you set up a DNS or
+L7 based load balancer.
 
-#### Delete DNS entries
+##### DNS
+
+Follow the respective DNS cleanup instructions depending on the setup you
+chose.
 
 1. [Manual](manual-dns-records.md#delete-dns-records) - manually remove the DNS
    entries.
 2. [External-DNS](external-dns.md#cleanup) - remove `external-dns`.
 
+##### L7 Load Balancer
+
+- [HAProxy](haproxy.md#cleanup) - to cleanup the HAProxy deployment.
+
 #### Cleanup rest of federation cluster
 
-[Steps to clean-up your federation cluster created using kubefnord](kubernetes-cluster-gke-federation.md#cleanup).
+[Steps to clean-up your federation cluster created using kubefed2](kubernetes-cluster-gke-federation.md#cleanup).
