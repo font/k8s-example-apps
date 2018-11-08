@@ -38,8 +38,8 @@ items:
   metadata:
     name: pacman
   spec:
-    Overrides:
-    - clustername: gke-us-west1
+    overrides:
+    - clusterName: gke-us-west1
       replicas: 5
 - apiVersion: core.federation.k8s.io/v1alpha1
   kind: FederatedDeploymentPlacement
