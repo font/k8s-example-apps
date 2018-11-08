@@ -70,7 +70,7 @@ sudo chmod +x /usr/local/bin/kubectl
 
 <!--TODO: update with binary path download once available-->
 ```bash
-curl -LO https://github.com/kubernetes-sigs/federation-v2/releases/download/v0.0.2-rc.1/kubefed2.tar.gz
+curl -LO https://github.com/kubernetes-sigs/federation-v2/releases/download/v0.0.2/kubefed2.tar.gz
 tar -xvzf kubefed2.tar.gz 
 sudo mv kubefed2 /usr/local/bin
 ```
