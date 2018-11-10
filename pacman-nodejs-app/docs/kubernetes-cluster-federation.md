@@ -191,8 +191,8 @@ done
 #### Verify
 
 ```bash
-kubectl get clusters
-kubectl describe federatedclusters
+kubectl -n kube-multicluster-public get clusters
+kubectl -n federation-system describe federatedclusters
 ```
 
 You should now have a working federated Kubernetes cluster spanning each zone.

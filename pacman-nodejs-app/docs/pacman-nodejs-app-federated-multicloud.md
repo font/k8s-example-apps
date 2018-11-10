@@ -274,15 +274,6 @@ kubectl patch federateddeployment pacman --type=merge -p \
     '{"spec":{"template":{"spec":{"replicas": 3}}}}'
 ```
 
-<!--
-Override the pacman deployment:
-
-```bash
-kubectl patch federateddeploymentoverride pacman --type=merge -p \
-    '{"spec":{"Overrides":[{"clustername":"gke-us-west1","replicas": 5}]}}'
-```
--->
-
 Add clusters to the pacman deployment placement resource:
 
 ```bash
@@ -290,11 +281,19 @@ kubectl patch federateddeploymentplacement pacman --type=merge -p \
     '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
 ```
 
-Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
+Wait until the pacman deployment shows 11 pods available, 5 on GKE and 3 in
+Azure and AWS:
 
 ```bash
 ./tools/mckubectl/mckubectl get deploy pacman
 ```
+
+## Create Load Balancer
+
+You can load balance to the pacman application using DNS or an L7 load
+balancer. Follow the instructions below for your preferred choice.
+
+## DNS
 
 #### Create DNS records
 
@@ -309,6 +308,17 @@ Once your DNS is updated to reflect the `pacman` load balancer service IP
 addresses for each cluster, open up your browser and try to access it via its
 DNS e.g.  [http://pacman.example.com/](http://pacman.example.com/).  Make sure
 to replace `example.com` with your DNS name.
+
+## L7 Load Balancer
+
+#### Deploy HAProxy
+
+Follow the instructions to [deploy HAProxy as an L7 load balancer](haproxy.md).
+
+Once the L7 load balancer is deployed with a DNS entry to point to it, open up
+your browser and try to access it via its DNS e.g.
+[http://pacman.example.com/](http://pacman.example.com/).  Make sure to replace
+`example.com` with your DNS name.
 
 ## Play Pac-Man
 

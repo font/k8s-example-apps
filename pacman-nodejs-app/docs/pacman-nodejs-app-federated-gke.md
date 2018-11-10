@@ -253,6 +253,9 @@ Wait until the pacman deployment shows 9 pods available, 3 in each cluster:
 
 ## Create Load Balancer
 
+You can load balance to the pacman application using DNS or an L7 load
+balancer. Follow the instructions below for your preferred choice.
+
 ## DNS
 
 #### Create DNS records

@@ -57,6 +57,7 @@ for i in ${CLUSTERS}; do
     if [[ -z ${IP_OR_HOST} ]]; then
         IP_OR_HOST=$(kubectl --context=${i} get svc pacman -o \
             jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        IP_OR_HOST="$(dig ${IP_OR_HOST} +short | head -1)"
     fi
     SERVER=$(echo ${i##*-})
     SERVER=$(echo ${SERVER::-1})
