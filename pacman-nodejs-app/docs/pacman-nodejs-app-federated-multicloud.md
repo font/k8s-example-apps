@@ -357,11 +357,23 @@ Delete MongoDB federated resources.
 kubectl delete ns mongo
 ```
 
-#### Delete DNS entries
+#### Delete Load Balancer
+
+Follow the below cleanup steps depending on whether you set up a DNS or
+L7 based load balancer.
+
+##### DNS
+
+Follow the respective DNS cleanup instructions depending on the setup you
+chose.
 
 1. [Manual](manual-dns-records.md#delete-dns-records) - manually remove the DNS
    entries.
 2. [External-DNS](external-dns.md#cleanup) - remove `external-dns`.
+
+##### L7 Load Balancer
+
+- [HAProxy](haproxy.md#cleanup) - to cleanup the HAProxy deployment.
 
 #### Cleanup rest of federation cluster
 
