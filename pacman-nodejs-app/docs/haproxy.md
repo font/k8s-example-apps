@@ -63,11 +63,11 @@ for i in ${CLUSTERS}; do
     SERVER=$(echo ${SERVER::-1})
     echo "${i} (${SERVER}): ${IP_OR_HOST}"
     kubectl --context=${HOST_CLUSTER} -n haproxy \
-        exec -it $HAPROXY_POD -- \
+        exec -it ${HAPROXY_POD} -- \
         bash -c "echo 'set server pacman_web_servers/${SERVER} addr ${IP_OR_HOST}' \
                        | socat stdio /tmp/haproxy"
     kubectl --context=${HOST_CLUSTER} -n haproxy \
-        exec -it $HAPROXY_POD -- \
+        exec -it ${HAPROXY_POD} -- \
         bash -c "echo 'set server pacman_web_servers/${SERVER} state ready' \
                        | socat stdio /tmp/haproxy"
 done
