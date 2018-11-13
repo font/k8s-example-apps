@@ -11,12 +11,12 @@ while true; do
     for i in ${TEST_CLUSTERS}; do
         echo "---------- ${i} -----------"
         set -x
-        kubectl patch federatednamespaceplacement pacman -p \
+        kubectl patch federatednamespaceplacement pacman --type=merge -p \
             "{\"spec\":{\"clusterNames\": [\"gke-us-west1\", \"az-us-central1\", \"aws-us-east1\"]}}"
         set +x
         time updatedns -t gke-us-west1 -t ${i}
         set -x
-        kubectl patch federatednamespaceplacement pacman -p \
+        kubectl patch federatednamespaceplacement pacman --type=merge -p \
             "{\"spec\":{\"clusterNames\": [\"gke-us-west1\", \"${i}\"]}}"
         set +x
     done

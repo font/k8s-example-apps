@@ -4,7 +4,13 @@
 #
 #
 #
-set -e
+set -o errexit
+set -o nounset
+set -o pipefail
+
+source "$(dirname "${BASH_SOURCE}")/../utils/utils.sh"
+
+DST_CONTEXTS=${DST_CONTEXTS:-}
 
 function usage {
     echo "$0: [OPTIONS] [-t|--to-context CONTEXT [CONTEXT]...] [-n|--namespace NAMESPACE] [-z|--zone ZONE_NAME] [-d|--dns DNS_NAME]"
@@ -18,8 +24,8 @@ function usage {
     echo "    -d, --dns              domain name used for your Google Cloud DNS zone e.g. 'example.com.'"
 }
 
-function parse_args {
-    req_arg_count=0
+function parse-args {
+    local req_arg_count=0
 
     if [[ ${1} == '-h' || ${1} == '--help' ]]; then
         usage
@@ -76,7 +82,7 @@ function parse_args {
 
 }
 
-function validate_contexts {
+function validate-contexts {
     for ctx in ${DST_CONTEXTS}; do
         if ! $(kubectl config get-contexts -o name | grep ${ctx} &> /dev/null); then
             echo "Error: cluster context '${ctx}' is not valid. Please check the context name and try again."
@@ -86,7 +92,7 @@ function validate_contexts {
     done
 }
 
-function validate_namespace {
+function validate-namespace {
     for ctx in ${DST_CONTEXTS}; do
         if ! $(kubectl --context=${ctx} get namespace ${NAMESPACE} &> /dev/null); then
             echo "Error: invalid namespace '${NAMESPACE}' for context ${ctx}"
@@ -96,7 +102,7 @@ function validate_namespace {
     done
 }
 
-function validate_zone_name {
+function validate-zone-name {
     zname=$(gcloud dns managed-zones list --filter="name = ${ZONE_NAME}" --format json | jq -r '.[0].name')
 
     if [[ ${zname} != ${ZONE_NAME} ]]; then
@@ -106,7 +112,7 @@ function validate_zone_name {
     fi
 }
 
-function validate_dns_name {
+function validate-dns-name {
     dname=$(gcloud dns managed-zones list --filter="name = ${ZONE_NAME}" --format json | jq -r '.[0].dnsName')
 
     if [[ ${dname} != ${DNS_NAME} ]]; then
@@ -116,11 +122,13 @@ function validate_dns_name {
     fi
 }
 
-function validate_args {
-    validate_contexts
-    #validate_namespace
-    validate_zone_name
-    validate_dns_name
+function validate-args {
+    validate-contexts
+    # Disabling namespace validation as it may not exist when this script
+    # executes if resources are being migrated by the federation controller.
+    #validate-namespace
+    validate-zone-name
+    validate-dns-name
 }
 
 function dns-updated {
@@ -133,7 +141,7 @@ function dns-updated {
     diff -q <(sort ${gcloud_tmpfile}) <(sort ${dig_tmpfile}) &> /dev/null
 }
 
-function verify_dns_update_propagated {
+function verify-dns-update-propagated {
     GCLOUD_DNS_IPS=$(gcloud dns record-sets list -z=${ZONE_NAME} --filter ${NAMESPACE}.${DNS_NAME} | awk -v ns="${NAMESPACE}" '$0 ~ ns {print $4}')
     GCLOUD_DNS_IPS=${GCLOUD_DNS_IPS//,/ }
     if [[ ${NEW_DNS_IPS// /} != ${GCLOUD_DNS_IPS// /} ]]; then
@@ -148,19 +156,19 @@ function verify_dns_update_propagated {
     local dig_tmpfile=$(mktemp /tmp/${script_name}.XXXXXX)
     echo ${GCLOUD_DNS_IPS} | sed 's/ /\n/g' > ${gcloud_tmpfile}
 
-    wait-for-condition "DNS update" "dns-updated ${gcloud_tmpfile} ${dig_tmpfile}" 180
+    util::wait-for-condition "DNS update" "dns-updated ${gcloud_tmpfile} ${dig_tmpfile}" 180
 
     rm -f ${gcloud_tmpfile} ${dig_tmpfile}
 }
 
-function start_dns_transaction {
+function start-dns-transaction {
     # Abort any existing transactions.
     gcloud dns record-sets transaction abort -z=${ZONE_NAME} 2>/dev/null || true
     echo "Starting transaction on zone [${ZONE_NAME}]..."
     gcloud dns record-sets transaction start -z=${ZONE_NAME}
 }
 
-function remove_old_dns_entry {
+function remove-old-dns-entry {
     # Grab existing IP addresses in DNS entry and replace commas with spaces.
     local old_dns_ips=$(gcloud dns record-sets list -z=${ZONE_NAME} --filter ${NAMESPACE}.${DNS_NAME} | awk -v ns="${NAMESPACE}" '$0 ~ ns {print $4}')
     local old_dns_ips=${old_dns_ips//,/ }
@@ -171,79 +179,20 @@ function remove_old_dns_entry {
         --type=A --ttl=1 ${old_dns_ips}
 }
 
-# wait-for-condition blocks until the provided condition becomes true
-#
-# Globals:
-#  None
-# Arguments:
-#  - 1: message indicating what conditions is being waited for (e.g. 'config to be written')
-#  - 2: a string representing an eval'able condition.  When eval'd it should not output
-#       anything to stdout or stderr.
-#  - 3: optional timeout in seconds.  If not provided, waits forever.
-# Returns:
-#  1 if the condition is not met before the timeout
-function wait-for-condition() {
-  local msg=$1
-  # condition should be a string that can be eval'd.
-  local condition=$2
-  local timeout=${3:-}
-  local sleep_secs=5
-
-  local start_msg="Waiting for ${msg}.."
-  local error_msg="[ERROR] Timeout waiting for ${msg}"
-
-  local counter=0
-  while ! ${condition}; do
-    if [[ "${counter}" = "0" ]]; then
-      echo -n "${start_msg}"
-    fi
-
-    if [[ -z "${timeout}" || "${counter}" -lt "${timeout}" ]]; then
-      counter=$((counter + ${sleep_secs}))
-      if [[ -n "${timeout}" ]]; then
-        echo -n '.'
-      fi
-      sleep ${sleep_secs}
-    else
-      echo -e "\n${error_msg}"
-      return 1
-    fi
-  done
-
-  if [[ "${counter}" != "0" && -n "${timeout}" ]]; then
-    echo 'OK'
-  fi
-}
-
-function namespace-service-ready {
-    kubectl --context=${1} get svc ${NAMESPACE} -o wide &> /dev/null
-}
-
-function namespace-service-external-host-ready {
-    IP=$(kubectl --context=${1} get svc ${NAMESPACE} -o \
-        jsonpath='{.status.loadBalancer.ingress[0].ip}')
-
-    if [[ -z ${IP} ]]; then
-        HOST=$(kubectl --context=${1} get svc ${NAMESPACE} -o \
-            jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-        [[ -n ${HOST} ]]
-    fi
-}
-
 function namespace-service-dns-ipaddr-available {
     IP="$(dig ${HOST} +short | head -1)"
     [[ -n ${IP} ]]
 }
 
-function add_new_dns_entry {
+function add-new-dns-entry {
     local c
     for i in ${DST_CONTEXTS}; do
-        wait-for-condition "[${NAMESPACE}] service in [${i}]" "namespace-service-ready ${i}" 180
-        wait-for-condition "[${NAMESPACE}] service external host in [${i}]" \
-            "namespace-service-external-host-ready ${i}" 180
+        util::wait-for-condition "[${NAMESPACE}] service in [${i}]" "util::namespace-service-ready ${i}" 180
+        util::wait-for-condition "[${NAMESPACE}] service external host in [${i}]" \
+            "util::namespace-service-external-host-ready ${i}" 180
 
         if [[ -z ${IP} ]]; then
-            wait-for-condition "load balancer DNS IP address in [${i}]" \
+            util::wait-for-condition "load balancer DNS IP address in [${i}]" \
                 "namespace-service-dns-ipaddr-available" 180
         fi
 
@@ -275,7 +224,7 @@ function add_new_dns_entry {
          --type=A --ttl=1 ${NEW_DNS_IPS}
 }
 
-function execute_dns_transaction {
+function execute-dns-transaction {
     echo "Executing transaction on zone [${ZONE_NAME}]..."
     DNS_TX_ID=$(gcloud dns record-sets transaction execute \
         -z=${ZONE_NAME} | tail -1 | awk '{print $1}')
@@ -287,28 +236,28 @@ function gcloud-dns-tx-done {
     [[ "${status}" == "done" ]]
 }
 
-function verify_dns_transaction {
-    wait-for-condition "DNS transaction" "gcloud-dns-tx-done ${DNS_TX_ID}" 180
+function verify-dns-transaction {
+    util::wait-for-condition "DNS transaction" "gcloud-dns-tx-done ${DNS_TX_ID}" 180
 }
 
-function run_dns_transaction {
-    start_dns_transaction
-    remove_old_dns_entry
-    add_new_dns_entry
-    execute_dns_transaction
-    verify_dns_transaction
+function run-dns-transaction {
+    start-dns-transaction
+    remove-old-dns-entry
+    add-new-dns-entry
+    execute-dns-transaction
+    verify-dns-transaction
 }
 
-function perform_dns_updates {
+function perform-dns-updates {
     echo "Updating [${NAMESPACE}] DNS to use clusters [${DST_CONTEXTS}]..."
-    run_dns_transaction
-    verify_dns_update_propagated
+    run-dns-transaction
+    verify-dns-update-propagated
 }
 
 function main {
-    parse_args $@
-    validate_args
-    perform_dns_updates
+    parse-args $@
+    validate-args
+    perform-dns-updates
 }
 
 main $@
