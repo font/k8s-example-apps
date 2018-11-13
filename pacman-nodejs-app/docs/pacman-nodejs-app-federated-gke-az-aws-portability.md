@@ -63,18 +63,24 @@ kubectl edit federatednamespaceplacement pacman
 Wait until the pacman deployment shows pods running in the AWS cluster:
 
 ```bash
-./tools/mckubectl/mckubectl get deploy pacman
+./tools/mckubectl/mckubectl get pods
 ```
 
 Once the pacman deployment shows pods running in the AWS cluster, you can
 proceed to updating the DNS record.
 
-### Update DNS
+### Update Load Balancer
+
+Here we'll update the load balancer using DNS or an L7 load balancer, depending
+on what method you chose during the tutorials. Follow the instructions below
+for the method you used.
+
+#### Update DNS
 
 This section is broken up into different methods of updating DNS, depending on
-what method you chose during the tutorials.
+what DNS method you chose during the tutorials.
 
-#### Manually
+##### Manually
 
 If you used the manual DNS setup during the tutorial, you'll want to use this
 section for migrating.
@@ -103,6 +109,28 @@ If you used `external-dns` to set up DNS during the tutorial, rest assured
 that as you continue through this section your DNS will be automatically
 updated by `external-dns`.
 
+#### L7 Load Balancer
+
+This section covers updating the L7 load balancer used during the setup of the
+game.
+
+##### HAProxy
+
+In order to add the AWS cluster load balancer IP address, we should update the
+HAProxy config using the Runtime API. Note that you could add the AWS load
+balancer server and then when you remove Pac-Man resources from Azure, the
+health check would automatically disable the server anyway. Here we'll choose
+to update HAProxy to add AWS and remove Azure for completeness.
+
+Run the following script to automate updating the L7 load balancer:
+
+```bash
+./tools/lb/updatelb.sh -t gke-us-west1 -t aws-us-east1 -n pacman
+```
+
+Once the script completes, the L7 load balancer will be updated to load balance
+traffic between the GKE and AWS clusters.
+
 ### Migrate Pac-Man Resources
 
 Migrating the Pac-Man resources away from Azure is as simple as migrating the
@@ -121,7 +149,7 @@ Wait until the pacman deployment no longer shows pods running in the Azure
 cluster:
 
 ```bash
-./tools/mckubectl/mckubectl get deploy pacman
+./tools/mckubectl/mckubectl get pods
 ```
 
 Once that's done, the migration is complete and you are ready to play to verify
