@@ -32,12 +32,18 @@ Once you've played Pac-Man to verify your application has been properly
 deployed, we'll migrate the application away from AWS to just the GKE and Azure
 Kubernetes clusters only.
 
-### Update DNS record
+### Update Load Balancer
+
+Here we'll update the load balancer using DNS or an L7 load balancer, depending
+on what method you chose during the tutorials. Follow the instructions below
+for the method you used.
+
+#### Update DNS
 
 This section is broken up into different methods of updating DNS, depending on
-what method you chose during the tutorials.
+what DNS method you chose during the tutorials.
 
-#### Manually
+##### Manually
 
 If you used the manual DNS setup during the tutorial, you'll want to use this
 section for migrating.
@@ -58,11 +64,33 @@ the following script:
 Once the script completes, you are ready to remove the Pac-Man resources from
 the AWS cluster.
 
-#### ExternalDNS
+##### ExternalDNS
 
 If you used `external-dns` to set up DNS during the tutorial, rest assured
 that as you continue through this section your DNS will be automatically
 updated by `external-dns`.
+
+#### L7 Load Balancer
+
+This section covers updating the L7 load balancer used during the setup of the
+game.
+
+##### HAProxy
+
+In order to remove the AWS cluster load balancer IP address, we should update
+the HAProxy config using the Runtime API. Note that you could avoid removing
+the AWS load balancer server from the HAProxy config and when the Pac-Man
+resources are moved from AWS, the health check would automatically disable the
+server anyway. Here we'll choose to update HAProxy for completeness.
+
+Run the following script to automate updating the L7 load balancer:
+
+```bash
+./tools/lb/updatelb.sh -t gke-us-west1 -t az-us-central1 -n pacman
+```
+
+Once the script completes, the L7 load balancer will be updated to load balance
+traffic between the GKE and Azure clusters.
 
 ### Migrate Pac-Man Resources
 
@@ -82,7 +110,7 @@ Wait until the pacman deployment no longer shows pods running in the AWS
 cluster:
 
 ```bash
-./tools/mckubectl/mckubectl get deploy pacman
+./tools/mckubectl/mckubectl get pods
 ```
 
 ## Play Pac-Man
