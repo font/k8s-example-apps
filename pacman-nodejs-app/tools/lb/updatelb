@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#
+# updatelb - Run the updatelb.sh tool
+#
+#
+#
+set -o errexit
+set -o nounset
+set -o pipefail
+
+SCRIPT_ROOT="$( cd "$( dirname "$(readlink -f "${BASH_SOURCE[0]}")" )" && pwd )"
+${SCRIPT_ROOT}/updatelb.sh ${@} -n pacman
