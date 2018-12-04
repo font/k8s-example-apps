@@ -31,7 +31,7 @@ git clone https://github.com/font/k8s-example-apps.git
 cd k8s-example-apps/pacman-nodejs-app
 ```
 
-## Create Application Container Image
+### Create Application Container Image
 
 The [Dockerfile](docker/Dockerfile) performs the following steps:
 
@@ -56,44 +56,48 @@ docker run -p 8000:8080 <user>/pacman-nodejs-app
 
 And going to `http://localhost:8000/` to see if you get the Pac-Man game.
 
-## Kubernetes Components
+### Container Registry
 
-### Install Google Cloud SDK
+#### Create a Quay Account
 
-To test on a Kubernetes cluster, make sure you have the [Google Cloud SDK installed](https://cloud.google.com/sdk/). You can quickly do this
-on Linux/Mac with:
+Create a [Quay](https://quay.io/) account which allows unlimited storage and serving of public
+repositories.
 
-```
-curl https://sdk.cloud.google.com | bash
-```
+#### Sign Into Your Quay Account
 
-Once installed, log in and update it:
+Run the following `docker` command to sign in:
 
-```
-gcloud auth login
-gcloud components update
-```
-
-### Create a Google Cloud Project
-
-You can either create a new project or use an existing one. See the
-[Google Cloud Docs](https://cloud.google.com/resource-manager/docs/creating-managing-projects) for more details.
-
-### Push container to Google Cloud Container Registry
-
-You'll want to tag your previously created Docker image to use the Google Cloud Container Registry URL and then push it:
-
-```
-docker tag <user>/pacman-nodejs-app gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
-docker push gcr.io/YOUR_PROJECT_ID/pacman-nodejs-app
+```bash
+$ docker login quay.io
+Username: myusername
+Password: mypassword
 ```
 
-Once you've pushed your image, you'll need to update the Kubernetes resources to point to your image before you continue
-with the rest of the guides.
+#### Push Container Image to Quay
+
+You'll want to tag your previously created Docker image to use the  URL and then push it:
 
 ```
-sed -i 's/ifontlabs/YOUR_PROJECT_ID/' deployments/pacman-deployment*.yaml
+docker tag <user>/pacman-nodejs-app quay.io/YOUR_USERNAME/pacman-nodejs-app
+docker push quay.io/YOUR_USERNAME/pacman-nodejs-app
 ```
+
+Once you've pushed your image, you'll need to update the Kubernetes resources
+to point to your image before you continue with the rest of the guides.
+
+```
+sed -i 's/ifont/YOUR_USERNAME/' deployments/pacman-deployment*.yaml
+```
+
+#### Make Container Image Public
+
+Go the `settings` tab for your repository and modify the `Repository Visibilty`
+to make the repository public. To navigate directly there, replace `<username>`
+with your username:
+https://quay.io/repository/<username>/pacman-nodejs-app?tab=settings
+
+Afer pushing, make sure to make your repository public on `quay.io`.
+
 
 ## Kubernetes Cluster Use-Cases
 

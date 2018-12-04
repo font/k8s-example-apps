@@ -22,16 +22,18 @@ Follow these steps to [clone the repository](../README.md#clone-this-repository)
 
 Follow these steps to [create the Pac-Man application container image](../README.md#create-application-container-image).
 
-#### Set up Google Cloud SDK and Push Container Image
+#### Create a Quay Account and Push Container Image
 
-Follow these steps to [push the Pac-Man container image to your Google Cloud Container Registry](../README.md#kubernetes-components).
+Follow these steps to [push the Pac-Man container image to your `quay.io`
+registry](../README.md#container-registry).
 
 #### Make Container Image Publicly Available
 
-Follow [these steps in Google Cloud Platform's documentation](https://cloud.google.com/container-registry/docs/access-control#making_the_images_in_your_registry_publicly_available)
-for making your container images in your registry publicly available. This will allow you to build and push the container
-image to one place and allow all your Kubernetes clusters to download it from the same location. You could do this
-similarly with the official Docker Hub.
+Follow these steps to [make your `quay.io` container image publicly
+available](../README.md#make-container-image-public). This will allow you to
+build and push the container image to one place and allow all your Kubernetes
+clusters to download it from the same location. You could do this similarly
+with the official Docker Hub.
 
 #### Create the Federated Kubernetes Clusters
 
@@ -41,7 +43,7 @@ public cloud providers e.g. GCP, AWS, and Azure. Each of the public cloud provid
 Follow these steps:
 
 1. [Create 1 GKE Kubernetes clusters in 1 region i.e.
-   us-west](kubernetes-cluster-gke-federation.md#gke-us-west1)
+   us-west](kubernetes-cluster-gke-federation.md)
 2. [Verify the GKE
    cluster](kubernetes-cluster-gke-federation.md#verify-the-clusters)
 3. [Download and install kubectl and

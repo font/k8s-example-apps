@@ -2,7 +2,25 @@
 
 This tutorial will walk you through setting up a Kubernetes cluster federation
 using [Federation-v2](https://github.com/kubernetes-sigs/federation-v2) and
-[`kubefed2`](https://github.com/kubernetes-sigs/federation-v2/tree/master/cmd/kubefed2).
+[`kubefed2`](https://github.com/kubernetes-sigs/federation-v2/tree/master/cmd/kubefed2)
+on GKE.
+
+## Install Google Cloud SDK
+
+To test on a Kubernetes cluster, make sure you have the [Google Cloud SDK
+installed](https://cloud.google.com/sdk/). You can quickly do this on Linux/Mac
+with:
+
+```
+curl https://sdk.cloud.google.com | bash
+```
+
+Once installed, log in and update it:
+
+```
+gcloud auth login
+gcloud components update
+```
 
 ## Create the Kubernetes Clusters
 
