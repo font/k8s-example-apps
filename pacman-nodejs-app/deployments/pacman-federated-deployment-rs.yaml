@@ -40,7 +40,9 @@ items:
   spec:
     overrides:
     - clusterName: gke-us-west1
-      replicas: 5
+      clusterOverrides:
+      - path: spec.replicas
+        value: 5
 - apiVersion: primitives.federation.k8s.io/v1alpha1
   kind: FederatedDeploymentPlacement
   metadata:
