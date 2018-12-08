@@ -59,7 +59,8 @@ Follow these steps:
 #### Set current-context to host cluster
 
 ```bash
-kubectl config use-context gke-us-west1
+HOST_CLUSTER=gke-us-west1
+kubectl config use-context ${HOST_CLUSTER}
 ```
 
 #### Export the Cluster Contexts
@@ -96,7 +97,7 @@ kubectl config get-contexts
 Create `pacman` federated namespace placement:
 
 ```bash
-sed -i 's/    - "null"/    - gke-us-west1/' namespace/pacman-federated-namespace-placement.yaml
+sed -i "s/    - \"null\"/    - ${HOST_CLUSTER}/" namespace/pacman-federated-namespace-placement.yaml
 kubectl create -f namespace/pacman-federated-namespace-placement.yaml
 kubectl patch federatednamespaceplacement pacman --type=merge -p \
     '{"spec":{"clusterNames": ["gke-us-west1", "az-us-central1", "aws-us-east1"]}}'
@@ -204,10 +205,10 @@ Once you've noted all the IP addresses, launch the `mongo` CLI and create the
 replication set specifying each of the mongos in our replication set.
 
 ```bash
-MONGO_POD=$(kubectl --context=gke-us-west1 -n mongo get pod \
+MONGO_POD=$(kubectl -n mongo get pod \
     --selector="name=mongo" \
     --output=jsonpath='{.items..metadata.name}')
-kubectl --context=gke-us-west1 -n mongo \
+kubectl -n mongo \
     exec -it ${MONGO_POD} -- \
     mongo --eval "rs.initiate({
                     '_id' : 'rs0',
@@ -231,7 +232,7 @@ kubectl --context=gke-us-west1 -n mongo \
 Check the status until this instance shows as `PRIMARY`:
 
 ```bash
-kubectl --context=gke-us-west1 -n mongo \
+kubectl -n mongo \
     exec -it ${MONGO_POD} -- \
     mongo --eval "rs.status()"
 ```

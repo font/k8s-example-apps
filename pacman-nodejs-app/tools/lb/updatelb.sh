@@ -120,7 +120,6 @@ function run-haproxy-cmd {
 function set-lb-server-entry {
     local cluster region new_server_ip
     declare -A backends
-    #backends=(["west"]="maint" ["central"]="maint" ["east"]="maint")
 
     # Grab and export IP addresses for load balancer IP or hostname for each
     # cluster.
@@ -155,15 +154,6 @@ function set-lb-server-entry {
         run-haproxy-cmd "set server pacman_web_servers/${region} addr ${new_server_ip}"
         run-haproxy-cmd "set server pacman_web_servers/${region} state ready"
         backends[${region}]="ready"
-        #backends_ready+=("${region}")
-        #if ${backends[${region}]+ready ] && ${backends[${region}]="ready"
-        ##for k in "${!backends[@]}" do
-        ##    if [[ ${region} == ${k} ]]; then
-        ##    fi
-        ##done
-        #for r in "west central east"; do
-        #    if test "${backends_ready[
-        #done
     done
 
     # Check which servers we need to disable and disable it.
