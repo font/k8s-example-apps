@@ -23,13 +23,16 @@ items:
               name: pacman
           spec:
             containers:
-            - image: quay.io/ifont/pacman-nodejs-app:latest
+            - image: quay.io/ifont/pacman-nodejs-app:v1.0.3
               name: pacman
+              imagePullPolicy: Always
               env:
               - name: MONGO_REPLICA_SET
                 value: rs0
               - name: MONGO_NAMESPACE_SERVICE_HOST
                 value: mongo.mongo.svc.cluster.local
+              - name: NUM_HIGHSCORE
+                value: "100"
               ports:
               - containerPort: 8080
                 name: http-server
@@ -39,10 +42,10 @@ items:
     name: pacman
   spec:
     overrides:
-    - clusterName: gke-us-west1
+    - clusterName: aws-us-east1
       clusterOverrides:
       - path: spec.replicas
-        value: 5
+        value: 3
 - apiVersion: primitives.federation.k8s.io/v1alpha1
   kind: FederatedDeploymentPlacement
   metadata:
