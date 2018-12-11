@@ -1,0 +1,21 @@
+apiVersion: primitives.federation.k8s.io/v1alpha1
+kind: FederatedConfigMapOverride
+metadata:
+  name: mongo-log
+spec:
+  overrides:
+  - clusterName: gke-us-west1
+    clusterOverrides:
+    - path: data
+      value:
+        clusterName: gke-us-west1
+  - clusterName: az-us-central1
+    clusterOverrides:
+    - path: data
+      value:
+        clusterName: az-us-central1
+  - clusterName: aws-us-east1
+    clusterOverrides:
+    - path: data
+      value:
+        clusterName: aws-us-east1
